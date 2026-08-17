@@ -11,14 +11,14 @@
         a.back:hover{color:#fff}
         h1{font-size:2rem;margin-bottom:.5rem}
         #status{font-size:1rem;color:#aaa;margin-bottom:1rem}
-        .puzzle{display:inline-grid;gap:1px;background:#333;padding:1px;border-radius:4px}
-        .cell{width:32px;height:32px;background:#1a1a2e;border:none;cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center;color:#666}
-        .cell.filled{background:#6c63ff}
+        #board{display:inline-grid;gap:0}
+        .col-hint{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:2px 4px;font-size:.75rem;color:#aaa;font-weight:bold;line-height:1.3}
+        .row-hint{display:flex;align-items:center;justify-content:flex-end;padding:2px 6px;font-size:.75rem;color:#aaa;font-weight:bold;gap:6px}
+        .cell{width:30px;height:30px;background:#2a2a4a;border:1px solid #333;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#666}
+        .cell.filled{background:#6c63ff;border-color:#5a52d5}
         .cell.x{color:#f43f5e}
         .cell.correct{background:#4ade80}
         .cell.wrong{background:rgba(239,68,68,.3)}
-        .hints{display:grid;gap:1px}
-        .hint-cell{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#aaa;font-weight:bold}
         .btn-row{margin-top:1rem;display:flex;gap:.6rem}
         .btn-row button{padding:.4rem 1rem;border:none;background:rgba(255,255,255,.1);color:#fff;border-radius:6px;cursor:pointer;font-size:.85rem}
         .btn-row button.active{background:#6c63ff}
@@ -28,7 +28,7 @@
     <a class="back" href="index.html">&larr; Menu</a>
     <h1>Nonogram</h1>
     <div id="status">Left click: Fill | Right click: Mark X</div>
-    <div id="puzzle" style="display:flex;gap:0"></div>
+    <div id="board"></div>
     <div class="btn-row">
         <button onclick="gen(5)">5x5</button>
         <button onclick="gen(10)" class="active">10x10</button>
@@ -44,63 +44,92 @@
         board=Array.from({length:size},()=>Array(size).fill(0));
         render();
     }
-    function getRowHints(row){
+    function getHints(arr){
         const hints=[];let cnt=0;
-        for(let c=0;c<size;c++){if(row[c])cnt++;else if(cnt){hints.push(cnt);cnt=0;}}
-        if(cnt)hints.push(cnt);return hints.length?hints:[0];
+        for(let i=0;i<arr.length;i++){if(arr[i])cnt++;else if(cnt){hints.push(cnt);cnt=0;}}
+        if(cnt)hints.push(cnt);
+        return hints.length?hints:[0];
     }
     function render(){
-        const el=document.getElementById('puzzle');el.innerHTML='';
-        // Calculate max hints
-        let maxRH=0,maxCH=0;
-        for(let r=0;r<size;r++){const h=getRowHints(solution[r]);if(h.length>maxRH)maxRH=h.length;}
-        for(let c=0;c<size;c++){const col=solution.map(r=>r[c]);const h=getRowHints(col);if(h.length>maxCH)maxCH=h.length;}
+        const el=document.getElementById('board');el.innerHTML='';
 
-        // Column hints (top)
-        const chDiv=document.createElement('div');
-        chDiv.style.cssText=`display:grid;grid-template-columns:${maxCH*20+size*32+size}px;`;
-        const chInner=document.createElement('div');
-        chInner.style.cssText=`display:grid;grid-template-columns:repeat(${size},32px);gap:1px;margin-left:${maxCH*20+4}px;`;
+        // Collect all hints
+        const colHints=[];
+        let maxCH=0;
         for(let c=0;c<size;c++){
-            const hints=getRowHints(solution.map(r=>r[c]));
-            const d=document.createElement('div');d.className='hint-cell';
-            d.style.height='auto';d.style.flexDirection='column';d.style.lineHeight='1.2';
-            d.innerHTML=hints.map(h=>`<span>${h}</span>`).join('');chInner.appendChild(d);
+            const h=getHints(solution.map(r=>r[c]));
+            colHints.push(h);
+            if(h.length>maxCH)maxCH=h.length;
         }
-        chDiv.appendChild(chInner);el.appendChild(chDiv);
-
-        // Main grid with row hints
-        const mainDiv=document.createElement('div');
-        mainDiv.style.cssText=`display:flex;`;
-        // Row hints
-        const rhDiv=document.createElement('div');
-        rhDiv.style.cssText=`display:flex;flex-direction:column;gap:1px;margin-right:4px;`;
+        const rowHints=[];
+        let maxRH=0;
         for(let r=0;r<size;r++){
-            const hints=getRowHints(solution[r]);
-            const d=document.createElement('div');d.className='hint-cell';
-            d.style.cssText=`height:32px;display:flex;align-items:center;justify-content:flex-end;gap:4px;`;
-            d.textContent=hints.join(' ');rhDiv.appendChild(d);
+            const h=getHints(solution[r]);
+            rowHints.push(h);
+            if(h.length>maxRH)maxRH=h.length;
         }
-        mainDiv.appendChild(rhDiv);
-        // Grid
-        const grid=document.createElement('div');
-        grid.className='puzzle';grid.style.gridTemplateColumns=`repeat(${size},32px)`;
-        for(let r=0;r<size;r++)for(let c=0;c<size;c++){
-            const d=document.createElement('button');d.className='cell';
-            if(board[r][c]===1)d.classList.add('filled');
-            if(board[r][c]===-1){d.classList.add('x');d.textContent='✕';}
-            d.onclick=()=>{board[r][c]=board[r][c]===0?1:board[r][c]===1?-1:0;render();};
-            d.oncontextmenu=e=>{e.preventDefault();board[r][c]=board[r][c]===0?-1:board[r][c]===-1?0:board[r][c];render();};
-            grid.appendChild(d);
+
+        // CSS grid: (maxRH cols for row-hint) + (size cols for cells)
+        //           (maxCH rows for col-hint) + (size rows for cells)
+        el.style.gridTemplateColumns=`repeat(${maxRH}, 28px) repeat(${size}, 30px)`;
+        el.style.gridTemplateRows=`repeat(${maxCH}, 28px) repeat(${size}, 30px)`;
+
+        // 1) Fill top-left corner area with empty divs
+        for(let r=0;r<maxCH;r++){
+            for(let c=0;c<maxRH;c++){
+                const d=document.createElement('div');
+                el.appendChild(d);
+            }
         }
-        mainDiv.appendChild(grid);el.appendChild(mainDiv);
+
+        // 2) Column hints (top area, spanning maxRH..maxRH+size-1 columns)
+        // Place each col-hint in row r (top to bottom), col (maxRH+c)
+        for(let r=0;r<maxCH;r++){
+            for(let c=0;c<size;c++){
+                const d=document.createElement('div');
+                d.className='col-hint';
+                const h=colHints[c];
+                // We want to show hints bottom-aligned: the last hint goes in the bottom row
+                const hintIdx=h.length-1-(maxCH-1-r);
+                if(hintIdx>=0&&hintIdx<h.length){
+                    d.textContent=h[hintIdx];
+                }
+                el.appendChild(d);
+            }
+        }
+
+        // 3) Row hints + puzzle cells (remaining maxRH+size rows)
+        for(let r=0;r<size;r++){
+            // Row hints
+            for(let c=0;c<maxRH;c++){
+                const d=document.createElement('div');
+                d.className='row-hint';
+                const h=rowHints[r];
+                // Left-align: first hint in leftmost column
+                if(c<h.length){
+                    d.textContent=h[c];
+                }
+                el.appendChild(d);
+            }
+            // Puzzle cells
+            for(let c=0;c<size;c++){
+                const d=document.createElement('div');d.className='cell';
+                if(board[r][c]===1)d.classList.add('filled');
+                if(board[r][c]===-1){d.classList.add('x');d.textContent='✕';}
+                d.onclick=()=>{board[r][c]=board[r][c]===0?1:board[r][c]===1?-1:0;render();};
+                d.oncontextmenu=e=>{e.preventDefault();board[r][c]=board[r][c]===0?-1:board[r][c]===-1?0:board[r][c];render();};
+                el.appendChild(d);
+            }
+        }
     }
     function check(){
+        const cells=document.querySelectorAll('#board .cell');
+        let idx=0;
         for(let r=0;r<size;r++)for(let c=0;c<size;c++){
-            const cell=document.querySelectorAll('.puzzle .cell')[r*size+c];
+            const cell=cells[idx++];
             if(board[r][c]===1&&solution[r][c]===1)cell.classList.add('correct');
             else if(board[r][c]===1&&solution[r][c]===0)cell.classList.add('wrong');
-            else if(board[r][c]===0&&solution[r][c]===1){cell.style.outline='1px solid #facc15';}
+            else if(board[r][c]===0&&solution[r][c]===1)cell.style.outline='1px solid #facc15';
         }
     }
     gen(10);
