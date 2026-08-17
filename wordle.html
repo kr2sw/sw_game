@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wordle</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        h1{font-size:2rem;margin-bottom:1.5rem}
+        #board{display:grid;grid-template-columns:repeat(5,60px);gap:6px;margin-bottom:1.5rem}
+        .tile{width:60px;height:60px;border:2px solid #444;display:flex;align-items:center;justify-content:center;font-size:2rem;font-weight:bold;border-radius:8px;transition:transform .3s}
+        .tile.filled{border-color:#888}
+        .tile.correct{background:#4ade80;border-color:#4ade80;color:#1a1a2e;animation:flip .4s}
+        .tile.present{background:#facc15;border-color:#facc15;color:#1a1a2e;animation:flip .4s}
+        .tile.absent{background:#333;border-color:#555;color:#888;animation:flip .4s}
+        @keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}100%{transform:rotateX(0)}}
+        #keyboard{display:flex;flex-direction:column;gap:6px;align-items:center}
+        .kb-row{display:flex;gap:4px}
+        .key{min-width:40px;height:55px;border:none;border-radius:6px;background:rgba(255,255,255,.15);color:#fff;font-size:.9rem;font-weight:bold;cursor:pointer;text-transform:uppercase}
+        .key:hover{background:rgba(255,255,255,.25)}
+        .key.correct{background:#4ade80;color:#1a1a2e}
+        .key.present{background:#facc15;color:#1a1a2e}
+        .key.absent{background:#333;color:#666}
+        .key.wide{min-width:65px;font-size:.75rem}
+        #msg{margin-top:1.5rem;font-size:1.2rem}
+        .btn{margin-top:1rem;padding:.5rem 1.5rem;border:none;background:#6c63ff;color:#fff;border-radius:8px;cursor:pointer;font-size:.9rem}
+        .btn:hover{background:#5a52d5}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <h1>Wordle</h1>
+    <div id="board"></div>
+    <div id="keyboard">
+        <div class="kb-row" id="kr1"></div>
+        <div class="kb-row" id="kr2"></div>
+        <div class="kb-row" id="kr3"></div>
+    </div>
+    <div id="msg"></div>
+    <button class="btn" onclick="newGame()">New Game</button>
+    <script>
+    const WORDS=['apple','beach','brain','candy','dance','eagle','flame','ghost','happy','ivory','juice','kite','lemon','mango','ocean','piano','queen','robot','smile','tiger','ultra','vivid','whale','yacht','zebra','blitz','crane','drift','epoch','frost','grape','honor','input','joker','knock','level','merge','nerve','orbit','pride','queen','rover','share','train','unity','vigor','owner','ruler','paint'];
+    let word,row,col,boardState,gameOver,kerState;
+    function newGame(){
+        word=WORDS[Math.floor(Math.random()*WORDS.length)];
+        row=0;col=0;gameOver=false;boardState=Array(6).fill(null).map(()=>Array(5).fill(''));
+        kerState={};
+        document.getElementById('msg').textContent='';render();renderKB();
+    }
+    function render(){
+        const b=document.getElementById('board');b.innerHTML='';
+        for(let r=0;r<6;r++)for(let c=0;c<5;c++){
+            const d=document.createElement('div');d.className='tile';
+            const v=boardState[r][c];
+            if(v)d.classList.add('filled');
+            if(r<row){
+                if(word[c]===v)d.classList.add('correct');
+                else if(word.includes(v))d.classList.add('present');
+                else d.classList.add('absent');
+            }
+            d.textContent=v;b.appendChild(d);
+        }
+    }
+    const ROWS=['qwertyuiop','asdfghjkl','zxcvbnm'];
+    function renderKB(){
+        ROWS.forEach((row,i)=>{
+            const el=document.getElementById('kr'+(i+1));el.innerHTML='';
+            if(i===2){const sp=document.createElement('button');sp.className='key wide';sp.textContent='Enter';sp.onclick=submitWord;el.appendChild(sp);}
+            row.split('').forEach(ch=>{
+                const b=document.createElement('button');b.className='key';b.textContent=ch;
+                if(kerState[ch])b.classList.add(kerState[ch]);
+                b.onclick=()=>typeChar(ch);el.appendChild(b);
+            });
+            if(i===2){const dl=document.createElement('button');dl.className='key wide';dl.textContent='⌫';dl.onclick=delChar;el.appendChild(dl);}
+        });
+    }
+    function typeChar(ch){if(gameOver||col>=5)return;boardState[row][col]=ch.toUpperCase();col++;render();}
+    function delChar(){if(gameOver||col<=0)return;col--;boardState[row][col]='';render();}
+    function submitWord(){
+        if(gameOver||col<5)return;
+        const guess=boardState[row].join('').toLowerCase();
+        if(!WORDS.includes(guess)&&guess!==word){document.getElementById('msg').textContent='Not in word list';return;}
+        // Update keyboard
+        for(let c=0;c<5;c++){
+            const ch=guess[c];
+            if(word[c]===ch)kerState[ch]='correct';
+            else if(word.includes(ch)&&kerState[ch]!=='correct')kerState[ch]='present';
+            else if(!kerState[ch])kerState[ch]='absent';
+        }
+        row++;col=0;render();renderKB();
+        if(guess===word){document.getElementById('msg').textContent='🎉 Correct!';gameOver=true;}
+        else if(row>=6){document.getElementById('msg').textContent='Answer: '+word;gameOver=true;}
+    }
+    document.addEventListener('keydown',e=>{
+        if(e.key==='Enter')submitWord();
+        else if(e.key==='Backspace')delChar();
+        else if(/^[a-zA-Z]$/.test(e.key))typeChar(e.key.toUpperCase());
+    });
+    newGame();
+    </script>
+</body>
+</html>

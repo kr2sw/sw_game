@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        .header{margin-bottom:1rem;text-align:center}
+        .header h1{font-size:2rem;margin-bottom:.5rem}
+        .info{display:flex;gap:2rem;font-size:1rem}
+        .info span{font-weight:bold}
+        .controls{display:flex;gap:.8rem;margin-bottom:1rem}
+        .controls button{padding:.4rem 1rem;border:none;background:rgba(255,255,255,.1);color:#fff;border-radius:6px;cursor:pointer;font-size:.85rem}
+        .controls button.active{background:#6c63ff}
+        #grid{display:grid;gap:8px}
+        .card{width:80px;height:80px;border-radius:10px;cursor:pointer;perspective:600px}
+        .card-inner{width:100%;height:100%;position:relative;transition:transform .4s;transform-style:preserve-3d}
+        .card.flipped .card-inner{transform:rotateY(180deg)}
+        .card-front,.card-back{position:absolute;inset:0;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:2rem;backface-visibility:hidden}
+        .card-front{background:rgba(255,255,255,.08);font-size:1.5rem}
+        .card-back{background:#6c63ff;transform:rotateY(180deg)}
+        .card.matched .card-back{background:#4ade80}
+        #msg{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:10}
+        #msg.show{display:flex}
+        #msg h2{font-size:2rem;margin-bottom:1rem}
+        #msg button{padding:.7rem 2rem;border:none;background:#6c63ff;color:#fff;border-radius:8px;cursor:pointer;font-size:1rem}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <div class="header">
+        <h1>Memory</h1>
+        <div class="info"><span>Moves: <span id="moves">0</span></span><span>Pairs: <span id="pairs">0</span>/<span id="total">0</span></span></div>
+    </div>
+    <div class="controls">
+        <button class="active" onclick="setSize(4,3,this)">4x3</button>
+        <button onclick="setSize(4,4,this)">4x4</button>
+        <button onclick="setSize(6,4,this)">6x4</button>
+    </div>
+    <div id="grid"></div>
+    <div id="msg"><h2>Complete!</h2><button onclick="init()">Play Again</button></div>
+    <script>
+    const EMOJIS=['🎮','🎯','🎲','🎸','🎨','🎭','🎪','🎬','🎸','🎺','🎻','🎹','🏆','🎖️','🎁','🎪','🌈','🔮','💎','🚀'];
+    let cols,rows,cards,flipped,matched,moves,lock;
+    function setSize(c,r,btn){cols=c;rows=r;document.querySelectorAll('.controls button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');init();}
+    function init(){
+        const total=(cols*rows)/2;document.getElementById('total').textContent=total;
+        const pool=EMOJIS.slice(0,total);
+        cards=[...pool,...pool].sort(()=>Math.random()-0.5);
+        flipped=[];matched=new Set();moves=0;lock=false;
+        document.getElementById('moves').textContent=0;document.getElementById('pairs').textContent=0;
+        document.getElementById('msg').classList.remove('show');render();
+    }
+    function render(){
+        const g=document.getElementById('grid');
+        g.style.gridTemplateColumns=`repeat(${cols},80px)`;
+        g.innerHTML='';
+        cards.forEach((emoji,i)=>{
+            const d=document.createElement('div');d.className='card';
+            if(flipped.includes(i)||matched.has(i))d.classList.add('flipped');
+            if(matched.has(i))d.classList.add('matched');
+            d.innerHTML=`<div class="card-inner"><div class="card-front">?</div><div class="card-back">${emoji}</div></div>`;
+            d.onclick=()=>flip(i);g.appendChild(d);
+        });
+    }
+    function flip(i){
+        if(lock||flipped.includes(i)||matched.has(i))return;
+        flipped.push(i);render();
+        if(flipped.length===2){
+            lock=true;moves++;
+            document.getElementById('moves').textContent=moves;
+            const[a,b]=flipped;
+            if(cards[a]===cards[b]){
+                matched.add(a);matched.add(b);flipped=[];
+                document.getElementById('pairs').textContent=matched.size/2;
+                lock=false;render();
+                if(matched.size===cards.length){
+                    setTimeout(()=>document.getElementById('msg').classList.add('show'),500);
+                }
+            }else{setTimeout(()=>{flipped=[];lock=false;render();},800);}
+        }
+    }
+    setSize(4,3,document.querySelector('.controls button'));
+    </script>
+</body>
+</html>

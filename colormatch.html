@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Match</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        h1{font-size:2rem;margin-bottom:.5rem}
+        .info{display:flex;gap:2rem;font-size:1.1rem;margin-bottom:2rem}
+        .info span{font-weight:bold}
+        #target{font-size:3rem;font-weight:bold;margin-bottom:1.5rem;min-height:50px;padding:1rem 2rem;background:rgba(255,255,255,.05);border-radius:12px}
+        #target .hex{font-size:1.5rem;color:#aaa}
+        #timer-bar{width:300px;height:8px;background:rgba(255,255,255,.1);border-radius:4px;margin-bottom:1.5rem;overflow:hidden}
+        #timer-fill{height:100%;background:#6c63ff;border-radius:4px;transition:width .1s linear}
+        .slider-wrap{margin-bottom:2rem}
+        #slider{-webkit-appearance:none;width:300px;height:12px;border-radius:6px;outline:none;cursor:pointer}
+        #slider::-webkit-slider-thumb{-webkit-appearance:none;width:28px;height:28px;border-radius:50%;background:#fff;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+        #slider::-moz-range-thumb{width:28px;height:28px;border-radius:50%;background:#fff;cursor:pointer;border:none}
+        .preview{display:flex;gap:2rem;margin-bottom:2rem}
+        .color-box{width:120px;height:120px;border-radius:12px;border:3px solid rgba(255,255,255,.1)}
+        .color-box small{display:block;text-align:center;margin-top:6px;font-size:.8rem;color:#aaa}
+        .btn{padding:.6rem 2rem;border:none;background:#6c63ff;color:#fff;border-radius:8px;cursor:pointer;font-size:1rem}
+        .btn:hover{background:#5a52d5}
+        #result{font-size:1.2rem;margin-top:1rem;min-height:30px}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <h1>Color Match</h1>
+    <div class="info"><span>Score: <span id="score">0</span></span><span>Round: <span id="round">0</span></span></div>
+    <div id="target"><span id="tname"></span><br><span class="hex" id="thex"></span></div>
+    <div id="timer-bar"><div id="timer-fill" style="width:100%"></div></div>
+    <div class="preview">
+        <div class="color-box" id="targetBox"><small>Target</small></div>
+        <div class="color-box" id="guessBox"><small>Your Guess</small></div>
+    </div>
+    <div class="slider-wrap">
+        <input type="range" id="slider" min="0" max="100" value="50">
+    </div>
+    <button class="btn" onclick="submitGuess()">Submit</button>
+    <div id="result"></div>
+    <script>
+    let targetH,targetS,targetB,score,round,timer,timerInterval;
+    function newRound(){
+        targetH=Math.floor(Math.random()*360);
+        targetS=40+Math.floor(Math.random()*60);
+        targetB=40+Math.floor(Math.random()*50);
+        round++;document.getElementById('round').textContent=round;
+        document.getElementById('targetBox').style.background=`hsl(${targetH},${targetS}%,${targetB}%)`;
+        document.getElementById('guessBox').style.background=`hsl(0,50%,50%)`;
+        document.getElementById('slider').value=50;
+        document.getElementById('result').textContent='';
+        timer=10;document.getElementById('timer-fill').style.width='100%';
+        clearInterval(timerInterval);
+        timerInterval=setInterval(()=>{
+            timer-=0.1;document.getElementById('timer-fill').style.width=(timer/10*100)+'%';
+            if(timer<=0){clearInterval(timerInterval);submitGuess();}
+        },100);
+        updateGuess();
+    }
+    function updateGuess(){
+        const h=Math.round(document.getElementById('slider').value*3.6);
+        document.getElementById('guessBox').style.background=`hsl(${h},${targetS}%,${targetB}%)`;
+    }
+    document.getElementById('slider').addEventListener('input',updateGuess);
+    function submitGuess(){
+        clearInterval(timerInterval);
+        const guessH=Math.round(document.getElementById('slider').value*3.6);
+        const diff=Math.abs(guessH-targetH);
+        const pts=Math.max(0,100-Math.round(diff*1.5));
+        score+=pts;document.getElementById('score').textContent=score;
+        document.getElementById('tname').textContent=`HSL(${targetH}, ${targetS}%, ${targetB}%)`;
+        document.getElementById('result').textContent=`+${pts} pts (diff: ${diff}°)`;
+        setTimeout(newRound,1500);
+    }
+    score=0;round=0;newRound();
+    </script>
+</body>
+</html>

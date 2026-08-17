@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simon</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        .header{margin-bottom:2rem;text-align:center}
+        .header h1{font-size:2rem;margin-bottom:.5rem}
+        #status{font-size:1.1rem;color:#aaa}
+        .board{display:grid;grid-template-columns:repeat(2,120px);gap:12px}
+        .btn{width:120px;height:120px;border:none;border-radius:16px;cursor:pointer;transition:opacity .15s,transform .1s;opacity:.5}
+        .btn.lit{opacity:1;transform:scale(1.05)}
+        .btn:active{transform:scale(.95)}
+        .btn.g{background:#4ade80}.btn.r{background:#f43f5e}.btn.b{background:#6c63ff}.btn.y{background:#facc15}
+        .info{margin-top:1.5rem;font-size:1.1rem}
+        .info span{font-weight:bold}
+        .btn-row{margin-top:1rem}
+        .btn-row button{padding:.6rem 2rem;border:none;background:#6c63ff;color:#fff;border-radius:8px;cursor:pointer;font-size:1rem}
+        .btn-row button:hover{background:#5a52d5}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <div class="header">
+        <h1>Simon</h1>
+        <div id="status">Press Start</div>
+    </div>
+    <div class="board">
+        <button class="btn g" onclick="playerPress(0)"></button>
+        <button class="btn r" onclick="playerPress(1)"></button>
+        <button class="btn b" onclick="playerPress(2)"></button>
+        <button class="btn y" onclick="playerPress(3)"></button>
+    </div>
+    <div class="info">Level: <span id="level">0</span></div>
+    <div class="btn-row"><button onclick="startGame()">Start</button></div>
+    <script>
+    const COLORS=['g','r','b','y'];
+    const SOUNDS=[440,523,659,784];
+    let seq,playerIdx,level,playing,canPress;
+    function startGame(){seq=[];level=0;nextRound();}
+    function nextRound(){
+        level++;document.getElementById('level').textContent=level;
+        seq.push(Math.floor(Math.random()*4));
+        playerIdx=0;canPress=false;
+        document.getElementById('status').textContent='Watch...';
+        setTimeout(()=>playSeq(),500);
+    }
+    function playSeq(){
+        let i=0;
+        const iv=setInterval(()=>{
+            if(i>=seq.length){clearInterval(iv);canPress=true;document.getElementById('status').textContent='Your turn';return;}
+            lightUp(seq[i]);i++;
+        },600);
+    }
+    function lightUp(idx){
+        const btns=document.querySelectorAll('.btn');
+        btns[idx].classList.add('lit');
+        playTone(SOUNDS[idx],200);
+        setTimeout(()=>btns[idx].classList.remove('lit'),400);
+    }
+    function playTone(freq,dur){
+        try{const ac=new(window.AudioContext||window.webkitAudioContext)();const o=ac.createOscillator();const g=ac.createGain();o.frequency.value=freq;g.gain.value=0.3;o.connect(g);g.connect(ac.destination);o.start();g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+dur/1000);o.stop(ac.currentTime+dur/1000);}catch(e){}
+    }
+    function playerPress(idx){
+        if(!canPress)return;
+        lightUp(idx);
+        if(idx===seq[playerIdx]){
+            playerIdx++;
+            if(playerIdx>=seq.length){
+                canPress=false;
+                document.getElementById('status').textContent='Correct!';
+                setTimeout(()=>nextRound(),1000);
+            }
+        }else{
+            canPress=false;
+            document.getElementById('status').textContent='Game Over! Level: '+level;
+        }
+    }
+    </script>
+</body>
+</html>

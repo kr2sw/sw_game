@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flappy Bird</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem;z-index:5}
+        a.back:hover{color:#fff}
+        .header{margin-bottom:.5rem;text-align:center}
+        .header h1{font-size:2rem}
+        canvas{border:2px solid #444;border-radius:4px;cursor:pointer}
+        .info{margin-top:.8rem;font-size:1rem}
+        .info span{font-weight:bold}
+        .hint{margin-top:.5rem;font-size:.8rem;color:#666}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <div class="header"><h1>Flappy Bird</h1></div>
+    <canvas id="c" width="320" height="480"></canvas>
+    <div class="info">Score: <span id="score">0</span> | Best: <span id="best">0</span></div>
+    <p class="hint">Click or Space to flap</p>
+    <script>
+    const c=document.getElementById('c'),ctx=c.getContext('2d');
+    const W=320,H=480,BIRD_X=60;
+    let birdY,birdV,score,best=0,pipeX,pipeGap,pipeH,gameState,frame;
+    const PIPE_W=50,GRAVITY=0.35,FLAP=-6.5,PIPE_SPEED=2.5,PIPE_INTERVAL=90;
+
+    function startGame(){
+        birdY=H/2;birdV=0;score=0;frame=0;gameState='ready';
+        pipeX=W+100;pipeH=100+Math.random()*(H-250);pipeGap=130;
+        document.getElementById('score').textContent=0;
+        draw();
+    }
+
+    function flap(){
+        if(gameState==='ready'){gameState='playing';}
+        if(gameState==='playing')birdV=FLAP;
+    }
+
+    function tick(){
+        if(gameState!=='playing'){requestAnimationFrame(tick);return;}
+        frame++;
+        birdV+=GRAVITY;birdY+=birdV;
+        pipeX-=PIPE_SPEED;
+
+        if(pipeX<-PIPE_W){pipeX=W;pipeH=80+Math.random()*(H-260);score++;document.getElementById('score').textContent=score;}
+
+        // Collision
+        if(birdY>H||birdY<0)return gameOver();
+        if(birdX()>pipeX&&birdX()<pipeX+PIPE_W){
+            if(birdY<pipeH||birdY>pipeH+pipeGap)return gameOver();
+        }
+
+        draw();requestAnimationFrame(tick);
+    }
+
+    function birdX(){return BIRD_X;}
+
+    function draw(){
+        ctx.clearRect(0,0,W,H);
+        // Sky gradient
+        const grad=ctx.createLinearGradient(0,0,0,H);
+        grad.addColorStop(0,'#0f172a');grad.addColorStop(1,'#1e293b');
+        ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+
+        // Pipes
+        ctx.fillStyle='#4ade80';
+        ctx.fillRect(pipeX,0,PIPE_W,pipeH);
+        ctx.fillRect(pipeX,pipeH+pipeGap,PIPE_W,H-pipeH-pipeGap);
+        // Pipe caps
+        ctx.fillStyle='#22c55e';
+        ctx.fillRect(pipeX-4,pipeH-16,PIPE_W+8,16);
+        ctx.fillRect(pipeX-4,pipeH+pipeGap,PIPE_W+8,16);
+
+        // Bird
+        ctx.save();ctx.translate(BIRD_X,birdY);
+        const angle=Math.min(birdV*3,Math.PI/2);
+        ctx.rotate(angle);
+        ctx.fillStyle='#facc15';
+        ctx.beginPath();ctx.ellipse(0,0,16,12,0,0,Math.PI*2);ctx.fill();
+        // Eye
+        ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(6,-3,5,0,Math.PI*2);ctx.fill();
+        ctx.fillStyle='#000';ctx.beginPath();ctx.arc(7,-3,2.5,0,Math.PI*2);ctx.fill();
+        // Beak
+        ctx.fillStyle='#f97316';ctx.beginPath();ctx.moveTo(14,-2);ctx.lineTo(22,1);ctx.lineTo(14,4);ctx.closePath();ctx.fill();
+        ctx.restore();
+
+        if(gameState==='ready'){
+            ctx.fillStyle='rgba(0,0,0,.5)';ctx.fillRect(0,0,W,H);
+            ctx.fillStyle='#fff';ctx.font='bold 32px sans-serif';ctx.textAlign='center';
+            ctx.fillText('Flappy Bird',W/2,H/2-20);ctx.font='18px sans-serif';
+            ctx.fillText('Click or Space to start',W/2,H/2+20);ctx.textAlign='start';
+        }
+        if(gameState==='over'){
+            ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(0,0,W,H);
+            ctx.fillStyle='#fff';ctx.font='bold 36px sans-serif';ctx.textAlign='center';
+            ctx.fillText('Game Over',W/2,H/2-20);ctx.font='20px sans-serif';
+            ctx.fillText('Score: '+score,W/2,H/2+20);ctx.textAlign='start';
+        }
+    }
+
+    function gameOver(){
+        gameState='over';
+        if(score>best){best=score;document.getElementById('best').textContent=best;}
+        draw();
+    }
+
+    c.addEventListener('click',flap);
+    document.addEventListener('keydown',e=>{if(e.code==='Space'){e.preventDefault();flap();}});
+    startGame();requestAnimationFrame(tick);
+    </script>
+</body>
+</html>

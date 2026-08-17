@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Racer</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        .container{max-width:600px;width:100%;padding:0 1rem}
+        h1{font-size:2rem;margin-bottom:1rem;text-align:center}
+        .track{position:relative;height:60px;background:rgba(255,255,255,.05);border-radius:30px;margin-bottom:1rem;overflow:hidden}
+        .car{position:absolute;top:50%;transform:translateY(-50%);font-size:2rem;transition:left .1s}
+        .track-label{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:.8rem;color:#666}
+        #text{font-size:1.1rem;line-height:2;background:rgba(255,255,255,.05);padding:1rem;border-radius:8px;margin-bottom:1rem;font-family:monospace;min-height:50px}
+        #text .correct{color:#4ade80}
+        #text .wrong{color:#f43f5e;text-decoration:underline}
+        #text .current{background:rgba(108,99,255,.4);border-radius:2px}
+        #input{width:100%;padding:.7rem;font-size:1.1rem;border:2px solid #444;border-radius:8px;background:rgba(255,255,255,.07);color:#fff;outline:none;font-family:monospace}
+        #input:focus{border-color:#6c63ff}
+        .stats{display:flex;gap:2rem;justify-content:center;margin:1rem 0;font-size:1rem}
+        .stats span{font-weight:bold}
+        .btn{margin-top:1rem;padding:.6rem 2rem;border:none;background:#6c63ff;color:#fff;border-radius:8px;cursor:pointer;font-size:1rem}
+        #result{display:none;text-align:center;margin:1rem 0;font-size:1.3rem;padding:1rem;background:rgba(255,255,255,.05);border-radius:12px}
+        #result.show{display:block}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <div class="container">
+        <h1>Typing Racer</h1>
+        <div class="track" id="track">
+            <div class="car" id="playerCar" style="left:0">🚗</div>
+            <div class="car" id="cpuCar" style="left:0">🤖</div>
+            <div class="track-label">🏁</div>
+        </div>
+        <div class="stats">
+            <span>WPM: <span id="wpm">0</span></span>
+            <span>Progress: <span id="prog">0</span>%</span>
+        </div>
+        <div id="text"></div>
+        <input id="input" placeholder="Type here..." autocomplete="off" disabled>
+        <div id="result"></div>
+        <button class="btn" onclick="startGame()">Race!</button>
+    </div>
+    <script>
+    const WORDS=["the quick brown fox jumps over lazy dog","every great journey begins with single step","practice makes progress not perfection","typing is skill that improves with time","code is poetry written in logic"];
+    let text,typed,timer,running,cpuPos,interval;
+    function startGame(){
+        text=WORDS[Math.floor(Math.random()*WORDS.length)];
+        typed='';running=false;cpuPos=0;
+        document.getElementById('input').disabled=false;document.getElementById('input').value='';
+        document.getElementById('result').classList.remove('show');
+        document.getElementById('cpuCar').style.left='0px';
+        document.getElementById('playerCar').style.left='0px';
+        document.getElementById('wpm').textContent='0';document.getElementById('prog').textContent='0';
+        renderText();document.getElementById('input').focus();
+        clearInterval(interval);
+        interval=setInterval(()=>{
+            if(!running)return;
+            cpuPos+=0.3+Math.random()*0.5;
+            if(cpuPos>100)cpuPos=100;
+            document.getElementById('cpuCar').style.left=`calc(${cpuPos}% - 30px)`;
+            if(cpuPos>=100){endRace(false);}
+        },50);
+    }
+    function renderText(){
+        const el=document.getElementById('text');el.innerHTML='';
+        for(let i=0;i<text.length;i++){
+            const s=document.createElement('span');
+            if(i<typed.length){s.className=typed[i]===text[i]?'correct':'wrong';s.textContent=text[i];}
+            else if(i===typed.length){s.className='current';s.textContent=text[i];}
+            else{s.textContent=text[i];}
+            el.appendChild(s);
+        }
+    }
+    document.getElementById('input').addEventListener('input',e=>{
+        if(!running){running=true;}
+        typed=e.target.value;
+        const correct=typed.split('').filter((c,i)=>c===text[i]).length;
+        const prog=Math.round(correct/text.length*100);
+        const wpm=Math.round((correct/5)/((Date.now()-timer)/60000))||0;
+        document.getElementById('wpm').textContent=wpm;
+        document.getElementById('prog').textContent=prog;
+        document.getElementById('playerCar').style.left=`calc(${Math.min(prog,100)}% - 30px)`;
+        renderText();
+        if(typed.length>=text.length&&typed===text)endRace(true);
+    });
+    function endRace(won){
+        running=false;clearInterval(interval);
+        document.getElementById('input').disabled=true;
+        const r=document.getElementById('result');
+        r.innerHTML=won?`🎉 You win! WPM: ${document.getElementById('wpm').textContent}`:'🤖 CPU wins! Try again.';
+        r.classList.add('show');
+    }
+    renderText();
+    </script>
+</body>
+</html>

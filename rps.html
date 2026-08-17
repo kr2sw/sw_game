@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPS</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        h1{font-size:2rem;margin-bottom:1rem}
+        .scores{display:flex;gap:2rem;font-size:1.1rem;margin-bottom:2rem}
+        .scores span{font-weight:bold}
+        .choices{display:flex;gap:1.5rem;margin-bottom:2rem}
+        .choice{width:110px;height:110px;border-radius:50%;border:3px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);font-size:3.5rem;cursor:pointer;transition:transform .2s,border-color .2s;display:flex;align-items:center;justify-content:center}
+        .choice:hover{transform:scale(1.1);border-color:#6c63ff}
+        .choice:active{transform:scale(.95)}
+        .battle{display:flex;gap:3rem;align-items:center;margin-bottom:1.5rem;min-height:80px}
+        .battle .vs{font-size:1.5rem;color:#888}
+        .battle .pick{font-size:4rem;min-width:80px;text-align:center}
+        #result{font-size:1.5rem;min-height:40px;margin-bottom:1rem}
+        #result.win{color:#4ade80}
+        #result.lose{color:#f43f5e}
+        #result.draw{color:#facc15}
+        .btn{padding:.5rem 1.5rem;border:none;background:rgba(255,255,255,.1);color:#fff;border-radius:8px;cursor:pointer;font-size:.9rem;margin-top:1rem}
+        .btn:hover{background:rgba(255,255,255,.2)}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <h1>Rock Paper Scissors</h1>
+    <div class="scores"><span>You: <span id="ws">0</span></span><span>CPU: <span id="ls">0</span></span></div>
+    <div class="battle">
+        <div class="pick" id="you">❓</div>
+        <div class="vs">VS</div>
+        <div class="pick" id="cpu">❓</div>
+    </div>
+    <div id="result">Choose your weapon!</div>
+    <div class="choices">
+        <div class="choice" onclick="play('rock')">🪨</div>
+        <div class="choice" onclick="play('paper')">📄</div>
+        <div class="choice" onclick="play('scissors')">✂️</div>
+    </div>
+    <button class="btn" onclick="reset()">Reset Score</button>
+    <script>
+    const EMOJI={rock:'🪨',paper:'📄',scissors:'✂️'};
+    let wins=0,losses=0;
+    function play(p){
+        const choices=['rock','paper','scissors'];
+        const cpu=choices[Math.floor(Math.random()*3)];
+        document.getElementById('you').textContent=EMOJI[p];
+        document.getElementById('cpu').textContent=EMOJI[cpu];
+        const r=document.getElementById('result');
+        if(p===cpu){r.textContent='Draw!';r.className='draw';}
+        else if((p==='rock'&&cpu==='scissors')||(p==='paper'&&cpu==='rock')||(p==='scissors'&&cpu==='paper')){
+            r.textContent='You Win!';r.className='win';wins++;document.getElementById('ws').textContent=wins;
+        }else{
+            r.textContent='You Lose!';r.className='lose';losses++;document.getElementById('ls').textContent=losses;
+        }
+    }
+    function reset(){wins=0;losses=0;document.getElementById('ws').textContent=0;document.getElementById('ls').textContent=0;document.getElementById('result').textContent='Choose your weapon!';document.getElementById('result').className='';}
+    </script>
+</body>
+</html>

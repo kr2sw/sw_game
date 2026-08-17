@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minesweeper</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        .header{display:flex;gap:2rem;margin-bottom:1rem;align-items:center;flex-wrap:wrap;justify-content:center}
+        .header h1{font-size:2rem}
+        .info{font-size:1rem}
+        .info span{font-weight:bold}
+        .controls{display:flex;gap:.8rem;margin-bottom:1rem}
+        .controls button{padding:.4rem 1rem;border:none;background:rgba(255,255,255,.1);color:#fff;border-radius:6px;cursor:pointer;font-size:.85rem}
+        .controls button:hover{background:rgba(255,255,255,.2)}
+        .controls button.active{background:#6c63ff}
+        #board{display:inline-grid;gap:2px;background:#333;padding:2px;border-radius:6px}
+        .cell{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:bold;border-radius:3px;cursor:pointer;background:#2a2a4a;user-select:none}
+        .cell.revealed{background:#1a1a2e}
+        .cell.mine{background:#e63946}
+        .cell.flagged::after{content:'🚩'}
+        .n1{color:#4a9eff}.n2{color:#4ade80}.n3{color:#f43f5e}.n4{color:#a855f7}.n5{color:#f59e0b}.n6{color:#06b6d4}.n7{color:#fff}.n8{color:#888}
+        #msg{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:10}
+        #msg.show{display:flex}
+        #msg h2{font-size:2rem;margin-bottom:1rem}
+        #msg button{padding:.7rem 2rem;border:none;background:#6c63ff;color:#fff;border-radius:8px;cursor:pointer;font-size:1rem}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <div class="header">
+        <h1>Minesweeper</h1>
+        <div class="info">Mines: <span id="mines">10</span></div>
+        <div class="info">Time: <span id="time">0</span>s</div>
+    </div>
+    <div class="controls">
+        <button class="active" onclick="setSize(10,10,10,this)">Easy 10x10</button>
+        <button onclick="setSize(16,16,40,this)">Medium 16x16</button>
+        <button onclick="setSize(16,30,99,this)">Hard 16x30</button>
+    </div>
+    <div id="board"></div>
+    <div id="msg"><h2 id="msgText"></h2><button onclick="init()">Play Again</button></div>
+    <script>
+    let COLS,ROWS,MINES,board,revealed,flagged,gameOver,firstClick,timer,timerInterval;
+    function setSize(c,r,m,btn){
+        COLS=c;ROWS=r;MINES=m;
+        document.querySelectorAll('.controls button').forEach(b=>b.classList.remove('active'));
+        if(btn)btn.classList.add('active');
+        document.getElementById('mines').textContent=m;
+        init();
+    }
+    function init(){
+        clearInterval(timerInterval);timer=0;document.getElementById('time').textContent=0;
+        board=Array.from({length:ROWS},()=>Array(COLS).fill(0));
+        revealed=Array.from({length:ROWS},()=>Array(COLS).fill(false));
+        flagged=Array.from({length:ROWS},()=>Array(COLS).fill(false));
+        gameOver=false;firstClick=true;
+        document.getElementById('msg').classList.remove('show');
+        render();
+    }
+    function placeMines(safeR,safeC){
+        let placed=0;
+        while(placed<MINES){
+            const r=Math.floor(Math.random()*ROWS),c=Math.floor(Math.random()*COLS);
+            if(board[r][c]===-1)continue;
+            if(Math.abs(r-safeR)<=1&&Math.abs(c-safeC)<=1)continue;
+            board[r][c]=-1;placed++;
+        }
+        for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+            if(board[r][c]===-1)continue;
+            let cnt=0;
+            for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+                const nr=r+dr,nc=c+dc;
+                if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS&&board[nr][nc]===-1)cnt++;
+            }
+            board[r][c]=cnt;
+        }
+    }
+    function reveal(r,c){
+        if(r<0||r>=ROWS||c<0||c>=COLS||revealed[r][c]||flagged[r][c])return;
+        revealed[r][c]=true;
+        if(board[r][c]===0){for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++)reveal(r+dr,c+dc);}
+    }
+    function click(r,c){
+        if(gameOver||flagged[r][c]||revealed[r][c])return;
+        if(firstClick){firstClick=false;placeMines(r,c);timerInterval=setInterval(()=>{timer++;document.getElementById('time').textContent=timer;},1000);}
+        if(board[r][c]===-1){
+            gameOver=true;clearInterval(timerInterval);
+            for(let i=0;i<ROWS;i++)for(let j=0;j<COLS;j++)if(board[i][j]===-1)revealed[i][j]=true;
+            document.getElementById('msgText').textContent='BOOM! Game Over';
+            document.getElementById('msg').classList.add('show');
+        }else{reveal(r,c);checkWin();}
+        render();
+    }
+    function checkWin(){
+        let cnt=0;
+        for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++)if(revealed[r][c])cnt++;
+        if(cnt===ROWS*COLS-MINES){
+            gameOver=true;clearInterval(timerInterval);
+            document.getElementById('msgText').textContent='You Win! '+timer+'s';
+            document.getElementById('msg').classList.add('show');
+        }
+    }
+    function render(){
+        const el=document.getElementById('board');
+        el.style.gridTemplateColumns=`repeat(${COLS},32px)`;
+        el.innerHTML='';
+        for(let r=0;r<ROWS;r++)for(let c=0;c<COLS;c++){
+            const d=document.createElement('div');d.className='cell';
+            if(flagged[r][c]&&!revealed[r][c]){d.className+=' flagged';}
+            else if(revealed[r][c]){
+                d.className+=' revealed';
+                if(board[r][c]===-1){d.className+=' mine';d.textContent='💣';}
+                else if(board[r][c]>0){d.textContent=board[r][c];d.className+=' n'+board[r][c];}
+            }
+            d.addEventListener('click',()=>click(r,c));
+            d.addEventListener('contextmenu',e=>{e.preventDefault();if(!gameOver&&!revealed[r][c]){flagged[r][c]=!flagged[r][c];render();}});
+            el.appendChild(d);
+        }
+    }
+    setSize(10,10,10);
+    </script>
+</body>
+</html>

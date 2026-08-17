@@ -12,75 +12,219 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            padding: 2rem 1rem;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #fff;
         }
         h1 {
             font-size: 3rem;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.3rem;
             text-shadow: 0 0 20px rgba(100, 200, 255, 0.5);
         }
         p.subtitle {
             font-size: 1.1rem;
             color: #aaa;
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
         }
         .games {
-            display: flex;
-            gap: 2rem;
-            flex-wrap: wrap;
-            justify-content: center;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.2rem;
+            max-width: 1100px;
+            width: 100%;
         }
         .game-card {
-            width: 220px;
-            padding: 2rem 1.5rem;
-            background: rgba(255,255,255,0.07);
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 16px;
+            padding: 1.5rem 1rem;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 14px;
             text-align: center;
             text-decoration: none;
             color: #fff;
             transition: transform 0.25s, box-shadow 0.25s, background 0.25s;
-            cursor: pointer;
         }
         .game-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.4);
-            background: rgba(255,255,255,0.12);
+            transform: translateY(-6px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            background: rgba(255,255,255,0.1);
         }
-        .game-card .icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-        }
-        .game-card h2 {
-            font-size: 1.3rem;
-            margin-bottom: 0.5rem;
-        }
-        .game-card p {
-            font-size: 0.85rem;
-            color: #bbb;
-        }
+        .game-card .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+        .game-card h2 { font-size: 1.1rem; margin-bottom: 0.3rem; }
+        .game-card p { font-size: 0.78rem; color: #999; line-height: 1.4; }
+        .category { font-size: 0.7rem; color: #6c63ff; text-transform: uppercase; letter-spacing: 1px; margin-top: 0.4rem; }
     </style>
 </head>
 <body>
     <h1>SW Game</h1>
-    <p class="subtitle">choose a game to play</p>
+    <p class="subtitle">20 browser games - no install needed</p>
     <div class="games">
         <a class="game-card" href="tetris.html">
             <div class="icon">&#x1F3AE;</div>
             <h2>Tetris</h2>
-            <p>Classic block-stacking puzzle game</p>
+            <p>Classic block-stacking puzzle</p>
+            <div class="category">Puzzle</div>
         </a>
         <a class="game-card" href="1024.html">
             <div class="icon">&#x1F522;</div>
             <h2>1024</h2>
             <p>Slide and merge numbers</p>
+            <div class="category">Puzzle</div>
         </a>
         <a class="game-card" href="snake.html">
             <div class="icon">&#x1F40D;</div>
             <h2>Snake</h2>
             <p>Grow your snake, eat the food</p>
+            <div class="category">Arcade</div>
+        </a>
+        <a class="game-card" href="pong.html">
+            <div class="icon">&#x1F3D3;</div>
+            <h2>Pong</h2>
+            <p>Classic paddle vs CPU</p>
+            <div class="category">Arcade</div>
+        </a>
+        <a class="game-card" href="flappy.html">
+            <div class="icon">&#x1F426;</div>
+            <h2>Flappy Bird</h2>
+            <p>Tap to fly through pipes</p>
+            <div class="category">Arcade</div>
+        </a>
+        <a class="game-card" href="breakout.html">
+            <div class="icon">&#x1F3AF;</div>
+            <h2>Breakout</h2>
+            <p>Break all the bricks</p>
+            <div class="category">Arcade</div>
+        </a>
+        <a class="game-card" href="whack.html">
+            <div class="icon">&#x1FA93;</div>
+            <h2>Whack-a-Mole</h2>
+            <p>Hit moles as they pop up</p>
+            <div class="category">Arcade</div>
+        </a>
+        <a class="game-card" href="racing.html">
+            <div class="icon">&#x1F3CE;</div>
+            <h2>Racing</h2>
+            <p>Dodge traffic on the road</p>
+            <div class="category">Arcade</div>
+        </a>
+        <a class="game-card" href="simon.html">
+            <div class="icon">&#x1F514;</div>
+            <h2>Simon</h2>
+            <p>Repeat the color sequence</p>
+            <div class="category">Memory</div>
+        </a>
+        <a class="game-card" href="memory.html">
+            <div class="icon">&#x1F0CF;</div>
+            <h2>Memory</h2>
+            <p>Find matching card pairs</p>
+            <div class="category">Memory</div>
+        </a>
+        <a class="game-card" href="lightsout.html">
+            <div class="icon">&#x1F4A1;</div>
+            <h2>Lights Out</h2>
+            <p>Toggle lights to turn them all off</p>
+            <div class="category">Logic</div>
+        </a>
+        <a class="game-card" href="minesweeper.html">
+            <div class="icon">&#x1F4A3;</div>
+            <h2>Minesweeper</h2>
+            <p>Find all the mines safely</p>
+            <div class="category">Logic</div>
+        </a>
+        <a class="game-card" href="sudoku.html">
+            <div class="icon">&#x1F523;</div>
+            <h2>Sudoku</h2>
+            <p>Fill numbers 1-9 in each row/col/box</p>
+            <div class="category">Logic</div>
+        </a>
+        <a class="game-card" href="nonogram.html">
+            <div class="icon">&#x1F535;</div>
+            <h2>Nonogram</h2>
+            <p>Picross picture logic puzzle</p>
+            <div class="category">Logic</div>
+        </a>
+        <a class="game-card" href="puzzle15.html">
+            <div class="icon">&#x1F4AF;</div>
+            <h2>Puzzle 15</h2>
+            <p>Slide tiles to order 1-15</p>
+            <div class="category">Puzzle</div>
+        </a>
+        <a class="game-card" href="tictactoe.html">
+            <div class="icon">&#x2B55;</div>
+            <h2>Tic Tac Toe</h2>
+            <p>vs CPU or 2 players</p>
+            <div class="category">Board</div>
+        </a>
+        <a class="game-card" href="connect4.html">
+            <div class="icon">&#x1F534;</div>
+            <h2>Connect Four</h2>
+            <p>Connect 4 discs in a row</p>
+            <div class="category">Board</div>
+        </a>
+        <a class="game-card" href="gomoku.html">
+            <div class="icon">&#x26AB;</div>
+            <h2>Gomoku</h2>
+            <p>Five in a row on 15x15 board</p>
+            <div class="category">Board</div>
+        </a>
+        <a class="game-card" href="reversi.html">
+            <div class="icon">&#x26AB;</div>
+            <h2>Reversi</h2>
+            <p>Flip discs to claim the board</p>
+            <div class="category">Board</div>
+        </a>
+        <a class="game-card" href="othello.html">
+            <div class="icon">&#x26AB;</div>
+            <h2>Othello</h2>
+            <p>Classic 8x8 disc flipping game</p>
+            <div class="category">Board</div>
+        </a>
+        <a class="game-card" href="hangman.html">
+            <div class="icon">&#x1F48B;</div>
+            <h2>Hangman</h2>
+            <p>Guess the word letter by letter</p>
+            <div class="category">Word</div>
+        </a>
+        <a class="game-card" href="wordle.html">
+            <div class="icon">&#x1F4DD;</div>
+            <h2>Wordle</h2>
+            <p>Guess the 5-letter word in 6 tries</p>
+            <div class="category">Word</div>
+        </a>
+        <a class="game-card" href="typing.html">
+            <div class="icon">&#x2328;</div>
+            <h2>Typing Speed</h2>
+            <p>Test your WPM and accuracy</p>
+            <div class="category">Typing</div>
+        </a>
+        <a class="game-card" href="typeracer.html">
+            <div class="icon">&#x1F3CE;</div>
+            <h2>Typing Racer</h2>
+            <p>Race against CPU by typing fast</p>
+            <div class="category">Typing</div>
+        </a>
+        <a class="game-card" href="mathquiz.html">
+            <div class="icon">&#x1F522;</div>
+            <h2>Math Quiz</h2>
+            <p>Solve math problems against time</p>
+            <div class="category">Quiz</div>
+        </a>
+        <a class="game-card" href="quiz.html">
+            <div class="icon">&#x1F9E0;</div>
+            <h2>Knowledge Quiz</h2>
+            <p>Test your general knowledge</p>
+            <div class="category">Quiz</div>
+        </a>
+        <a class="game-card" href="colormatch.html">
+            <div class="icon">&#x1F3A8;</div>
+            <h2>Color Match</h2>
+            <p>Match the hue with a slider</p>
+            <div class="category">Casual</div>
+        </a>
+        <a class="game-card" href="rps.html">
+            <div class="icon">&#x270B;</div>
+            <h2>Rock Paper Scissors</h2>
+            <p>Beat the computer</p>
+            <div class="category">Casual</div>
         </a>
     </div>
 </body>

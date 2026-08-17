@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Puzzle 15</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        h1{font-size:2rem;margin-bottom:.5rem}
+        .info{display:flex;gap:2rem;font-size:1rem;margin-bottom:1rem}
+        .info span{font-weight:bold}
+        #board{display:grid;grid-template-columns:repeat(4,80px);gap:4px}
+        .cell{width:80px;height:80px;border:none;border-radius:10px;font-size:1.8rem;font-weight:bold;cursor:pointer;transition:background .15s,transform .1s}
+        .cell:not(.empty){background:#6c63ff;color:#fff}
+        .cell:not(.empty):hover{background:#5a52d5}
+        .cell:not(.empty):active{transform:scale(.95)}
+        .cell.empty{background:transparent}
+        .cell.correct{background:#4ade80}
+        .btn-row{margin-top:1.5rem;display:flex;gap:.8rem}
+        .btn-row button{padding:.5rem 1.5rem;border:none;background:rgba(255,255,255,.1);color:#fff;border-radius:8px;cursor:pointer;font-size:.9rem}
+        .btn-row button:hover{background:rgba(255,255,255,.2)}
+        #msg{margin-top:1rem;font-size:1.2rem;color:#4ade80}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <h1>Puzzle 15</h1>
+    <div class="info"><span>Moves: <span id="moves">0</span></span><span>Time: <span id="time">0</span>s</span></div>
+    <div id="board"></div>
+    <div class="btn-row">
+        <button onclick="shuffle()">Shuffle</button>
+        <button onclick="solve()">Auto Solve</button>
+    </div>
+    <div id="msg"></div>
+    <script>
+    let tiles,moves,timer,timerInterval,blankIdx;
+    function init(){
+        tiles=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0];moves=0;timer=0;
+        blankIdx=15;clearInterval(timerInterval);
+        document.getElementById('moves').textContent=0;document.getElementById('time').textContent=0;
+        document.getElementById('msg').textContent='';render();
+    }
+    function shuffle(){
+        for(let i=0;i<200;i++){
+            const adj=getAdj(blankIdx);
+            const next=adj[Math.floor(Math.random()*adj.length)];
+            [tiles[blankIdx],tiles[next]]=[tiles[next],tiles[blankIdx]];blankIdx=next;
+        }
+        moves=0;timer=0;clearInterval(timerInterval);
+        timerInterval=setInterval(()=>{timer++;document.getElementById('time').textContent=timer;},1000);
+        document.getElementById('moves').textContent=0;
+        document.getElementById('msg').textContent='';render();
+    }
+    function getAdj(i){
+        const adj=[];const r=Math.floor(i/4),c=i%4;
+        if(r>0)adj.push(i-4);if(r<3)adj.push(i+4);if(c>0)adj.push(i-1);if(c<3)adj.push(i+1);
+        return adj;
+    }
+    function click(i){
+        if(!tiles[blankIdx]&&moves===0&&!timer)return;
+        if(!getAdj(blankIdx).includes(i))return;
+        if(!timerInterval){timerInterval=setInterval(()=>{timer++;document.getElementById('time').textContent=timer;},1000);}
+        [tiles[blankIdx],tiles[i]]=[tiles[i],tiles[blankIdx]];blankIdx=i;moves++;
+        document.getElementById('moves').textContent=moves;
+        render();checkWin();
+    }
+    function checkWin(){
+        for(let i=0;i<15;i++){if(tiles[i]!==i+1)return;}
+        clearInterval(timerInterval);
+        document.getElementById('msg').textContent=`Solved in ${moves} moves, ${timer}s! 🎉`;
+    }
+    function render(){
+        const el=document.getElementById('board');el.innerHTML='';
+        tiles.forEach((v,i)=>{
+            const d=document.createElement('button');d.className='cell'+(v===0?' empty':'');
+            d.textContent=v||'';
+            if(v===i+1&&v)d.classList.add('correct');
+            d.onclick=()=>click(i);el.appendChild(d);
+        });
+    }
+    function solve(){
+        // Simple auto-solve by just setting to solved state
+        tiles=[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0];blankIdx=15;
+        clearInterval(timerInterval);
+        document.getElementById('msg').textContent='Solved! 🎉';
+        render();
+    }
+    init();
+    </script>
+</body>
+</html>

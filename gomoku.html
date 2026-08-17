@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gomoku</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        .header{margin-bottom:1rem;text-align:center}
+        .header h1{font-size:2rem;margin-bottom:.5rem}
+        #status{font-size:1.1rem;color:#aaa}
+        canvas{border:2px solid #444;border-radius:4px;cursor:pointer;display:block}
+        .btn-row{margin-top:1rem}
+        .btn-row button{padding:.5rem 1.5rem;border:none;background:#6c63ff;color:#fff;border-radius:8px;cursor:pointer;font-size:.9rem}
+        .btn-row button:hover{background:#5a52d5}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <div class="header">
+        <h1>Gomoku</h1>
+        <div id="status">Black's turn</div>
+    </div>
+    <canvas id="c" width="450" height="450"></canvas>
+    <div class="btn-row"><button onclick="newGame()">New Game</button></div>
+    <script>
+    const c=document.getElementById('c'),ctx=c.getContext('2d');
+    const SIZE=15,CELL=30,PAD=15;
+    let grid,turn,gameOver;
+    function newGame(){
+        grid=Array.from({length:SIZE},()=>Array(SIZE).fill(0));turn=1;gameOver=false;
+        document.getElementById('status').textContent="Black's turn";draw();
+    }
+    function draw(){
+        ctx.clearRect(0,0,c.width,c.height);
+        ctx.fillStyle='#d4a037';ctx.fillRect(0,0,c.width,c.height);
+        ctx.strokeStyle='#8b6914';ctx.lineWidth=1;
+        for(let i=0;i<SIZE;i++){
+            ctx.beginPath();ctx.moveTo(PAD+i*CELL+CELL/2,PAD+CELL/2);ctx.lineTo(PAD+i*CELL+CELL/2,PAD+(SIZE-1)*CELL+CELL/2);ctx.stroke();
+            ctx.beginPath();ctx.moveTo(PAD+CELL/2,PAD+i*CELL+CELL/2);ctx.lineTo(PAD+(SIZE-1)*CELL+CELL/2,PAD+i*CELL+CELL/2);ctx.stroke();
+        }
+        for(let r=0;r<SIZE;r++)for(let col=0;col<SIZE;col++){
+            if(!grid[r][col])continue;
+            const x=PAD+col*CELL+CELL/2,y=PAD+r*CELL+CELL/2;
+            ctx.beginPath();ctx.arc(x,y,CELL/2-2,0,Math.PI*2);
+            ctx.fillStyle=grid[r][col]===1?'#111':'#fff';ctx.fill();
+            if(grid[r][col]===2){ctx.strokeStyle='#999';ctx.lineWidth=1;ctx.stroke();}
+        }
+    }
+    c.addEventListener('click',e=>{
+        if(gameOver)return;
+        const rect=c.getBoundingClientRect();
+        const col=Math.round((e.clientX-rect.left-PAD-CELL/2)/CELL);
+        const row=Math.round((e.clientY-rect.top-PAD-CELL/2)/CELL);
+        if(row<0||row>=SIZE||col<0||col>=SIZE||grid[row][col])return;
+        grid[row][col]=turn;
+        const w=checkWin(row,col);
+        if(w){gameOver=true;document.getElementById('status').textContent=(turn===1?'Black':'White')+' wins! 🎉';draw();return;}
+        if(grid.flat().every(v=>v)){gameOver=true;document.getElementById('status').textContent='Draw!';draw();return;}
+        turn=turn===1?2:1;
+        document.getElementById('status').textContent=(turn===1?'Black':'White')+"'s turn";
+        draw();
+    });
+    function checkWin(r,c){
+        const p=grid[r][c];
+        const dirs=[[0,1],[1,0],[1,1],[1,-1]];
+        for(const[dr,dc]of dirs){
+            let cnt=1;
+            for(let d of[1,-1]){for(let i=1;i<5;i++){const nr=r+dr*d*i,nc=c+dc*d*i;if(nr>=0&&nr<SIZE&&nc>=0&&nc<SIZE&&grid[nr][nc]===p)cnt++;else break;}}
+            if(cnt>=5)return true;
+        }
+        return false;
+    }
+    newGame();
+    </script>
+</body>
+</html>

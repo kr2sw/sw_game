@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nonogram</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        h1{font-size:2rem;margin-bottom:.5rem}
+        #status{font-size:1rem;color:#aaa;margin-bottom:1rem}
+        .puzzle{display:inline-grid;gap:1px;background:#333;padding:1px;border-radius:4px}
+        .cell{width:32px;height:32px;background:#1a1a2e;border:none;cursor:pointer;font-size:.7rem;display:flex;align-items:center;justify-content:center;color:#666}
+        .cell.filled{background:#6c63ff}
+        .cell.x{color:#f43f5e}
+        .cell.correct{background:#4ade80}
+        .cell.wrong{background:rgba(239,68,68,.3)}
+        .hints{display:grid;gap:1px}
+        .hint-cell{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#aaa;font-weight:bold}
+        .btn-row{margin-top:1rem;display:flex;gap:.6rem}
+        .btn-row button{padding:.4rem 1rem;border:none;background:rgba(255,255,255,.1);color:#fff;border-radius:6px;cursor:pointer;font-size:.85rem}
+        .btn-row button.active{background:#6c63ff}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <h1>Nonogram</h1>
+    <div id="status">Left click: Fill | Right click: Mark X</div>
+    <div id="puzzle" style="display:flex;gap:0"></div>
+    <div class="btn-row">
+        <button onclick="gen(5)">5x5</button>
+        <button onclick="gen(10)" class="active">10x10</button>
+        <button onclick="check()">Check</button>
+    </div>
+    <script>
+    let size,solution,board;
+    function gen(s){
+        size=s;
+        document.querySelectorAll('.btn-row button').forEach(b=>b.classList.remove('active'));
+        document.querySelector(`.btn-row button[onclick="gen(${s})"]`).classList.add('active');
+        solution=Array.from({length:size},()=>Array.from({length:size},()=>Math.random()>.5?1:0));
+        board=Array.from({length:size},()=>Array(size).fill(0));
+        render();
+    }
+    function getRowHints(row){
+        const hints=[];let cnt=0;
+        for(let c=0;c<size;c++){if(row[c])cnt++;else if(cnt){hints.push(cnt);cnt=0;}}
+        if(cnt)hints.push(cnt);return hints.length?hints:[0];
+    }
+    function render(){
+        const el=document.getElementById('puzzle');el.innerHTML='';
+        // Calculate max hints
+        let maxRH=0,maxCH=0;
+        for(let r=0;r<size;r++){const h=getRowHints(solution[r]);if(h.length>maxRH)maxRH=h.length;}
+        for(let c=0;c<size;c++){const col=solution.map(r=>r[c]);const h=getRowHints(col);if(h.length>maxCH)maxCH=h.length;}
+
+        // Column hints (top)
+        const chDiv=document.createElement('div');
+        chDiv.style.cssText=`display:grid;grid-template-columns:${maxCH*20+size*32+size}px;`;
+        const chInner=document.createElement('div');
+        chInner.style.cssText=`display:grid;grid-template-columns:repeat(${size},32px);gap:1px;margin-left:${maxCH*20+4}px;`;
+        for(let c=0;c<size;c++){
+            const hints=getRowHints(solution.map(r=>r[c]));
+            const d=document.createElement('div');d.className='hint-cell';
+            d.style.height='auto';d.style.flexDirection='column';d.style.lineHeight='1.2';
+            d.innerHTML=hints.map(h=>`<span>${h}</span>`).join('');chInner.appendChild(d);
+        }
+        chDiv.appendChild(chInner);el.appendChild(chDiv);
+
+        // Main grid with row hints
+        const mainDiv=document.createElement('div');
+        mainDiv.style.cssText=`display:flex;`;
+        // Row hints
+        const rhDiv=document.createElement('div');
+        rhDiv.style.cssText=`display:flex;flex-direction:column;gap:1px;margin-right:4px;`;
+        for(let r=0;r<size;r++){
+            const hints=getRowHints(solution[r]);
+            const d=document.createElement('div');d.className='hint-cell';
+            d.style.cssText=`height:32px;display:flex;align-items:center;justify-content:flex-end;gap:4px;`;
+            d.textContent=hints.join(' ');rhDiv.appendChild(d);
+        }
+        mainDiv.appendChild(rhDiv);
+        // Grid
+        const grid=document.createElement('div');
+        grid.className='puzzle';grid.style.gridTemplateColumns=`repeat(${size},32px)`;
+        for(let r=0;r<size;r++)for(let c=0;c<size;c++){
+            const d=document.createElement('button');d.className='cell';
+            if(board[r][c]===1)d.classList.add('filled');
+            if(board[r][c]===-1){d.classList.add('x');d.textContent='✕';}
+            d.onclick=()=>{board[r][c]=board[r][c]===0?1:board[r][c]===1?-1:0;render();};
+            d.oncontextmenu=e=>{e.preventDefault();board[r][c]=board[r][c]===0?-1:board[r][c]===-1?0:board[r][c];render();};
+            grid.appendChild(d);
+        }
+        mainDiv.appendChild(grid);el.appendChild(mainDiv);
+    }
+    function check(){
+        for(let r=0;r<size;r++)for(let c=0;c<size;c++){
+            const cell=document.querySelectorAll('.puzzle .cell')[r*size+c];
+            if(board[r][c]===1&&solution[r][c]===1)cell.classList.add('correct');
+            else if(board[r][c]===1&&solution[r][c]===0)cell.classList.add('wrong');
+            else if(board[r][c]===0&&solution[r][c]===1){cell.style.outline='1px solid #facc15';}
+        }
+    }
+    gen(10);
+    </script>
+</body>
+</html>

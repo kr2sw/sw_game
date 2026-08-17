@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lights Out</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        .header{margin-bottom:1.5rem;text-align:center}
+        .header h1{font-size:2rem;margin-bottom:.5rem}
+        #status{font-size:1.1rem;color:#aaa}
+        .board{display:grid;grid-template-columns:repeat(5,70px);gap:6px}
+        .cell{width:70px;height:70px;border:none;border-radius:10px;cursor:pointer;font-size:1.5rem;transition:background .2s}
+        .cell.on{background:#facc15;box-shadow:0 0 20px rgba(250,204,21,.4)}
+        .cell.off{background:#2a2a4a}
+        .info{margin-top:1.5rem;font-size:1rem}
+        .info span{font-weight:bold}
+        .btn-row{margin-top:1rem}
+        .btn-row button{padding:.5rem 1.5rem;border:none;background:#6c63ff;color:#fff;border-radius:8px;cursor:pointer;font-size:.9rem}
+        .btn-row button:hover{background:#5a52d5}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <div class="header">
+        <h1>Lights Out</h1>
+        <div id="status">Turn off all the lights!</div>
+    </div>
+    <div class="board" id="board"></div>
+    <div class="info">Moves: <span id="moves">0</span></div>
+    <div class="btn-row"><button onclick="init()">New Puzzle</button></div>
+    <script>
+    let grid,moves;
+    function init(){
+        grid=Array.from({length:5},()=>Array(5).fill(false));
+        // Random moves to create solvable puzzle
+        for(let i=0;i<30;i++)toggle(Math.floor(Math.random()*5),Math.floor(Math.random()*5),true);
+        moves=0;document.getElementById('moves').textContent=0;document.getElementById('status').textContent='Turn off all the lights!';render();
+    }
+    function toggle(r,c,silent){
+        for(const[dr,dc]of[[0,0],[-1,0],[1,0],[0,-1],[0,1]]){
+            const nr=r+dr,nc=c+dc;
+            if(nr>=0&&nr<5&&nc>=0&&nc<5)grid[nr][nc]=!grid[nr][nc];
+        }
+        if(!silent){moves++;document.getElementById('moves').textContent=moves;render();checkWin();}
+    }
+    function checkWin(){
+        if(grid.every(r=>r.every(v=>!v)))document.getElementById('status').textContent='You win! 🎉';
+    }
+    function render(){
+        const b=document.getElementById('board');b.innerHTML='';
+        for(let r=0;r<5;r++)for(let c=0;c<5;c++){
+            const d=document.createElement('button');
+            d.className='cell '+(grid[r][c]?'on':'off');
+            d.textContent=grid[r][c]?'💡':'';
+            d.onclick=()=>toggle(r,c);b.appendChild(d);
+        }
+    }
+    init();
+    </script>
+</body>
+</html>

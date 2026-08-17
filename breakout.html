@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breakout</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        .header{margin-bottom:.5rem;text-align:center}
+        .header h1{font-size:2rem}
+        canvas{border:2px solid #444;border-radius:4px;cursor:none;display:block}
+        .info{margin-top:.8rem;font-size:1rem}
+        .info span{font-weight:bold}
+        #overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:10}
+        #overlay h2{font-size:2rem;margin-bottom:1rem}
+        #overlay button{padding:.7rem 2rem;border:none;background:#6c63ff;color:#fff;border-radius:8px;cursor:pointer;font-size:1rem}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <div class="header"><h1>Breakout</h1></div>
+    <canvas id="c" width="480" height="400"></canvas>
+    <div class="info">Score: <span id="score">0</span> | Lives: <span id="lives">3</span></div>
+    <div id="overlay"><h2 id="ovTitle">Breakout</h2><button onclick="startGame()">Start</button></div>
+    <script>
+    const c=document.getElementById('c'),ctx=c.getContext('2d');
+    const W=480,H=400;
+    const BRICK_ROWS=5,BRICK_COLS=8,BW=54,BH=18,BPAD=4,BTOP=40;
+    const COLORS=['#ef4444','#f97316','#facc15','#4ade80','#6c63ff'];
+    let px,paddleW=80,bx,by,bvx,bvy,bricks,score,lives,gameOn;
+    let mouseX=W/2;
+    c.addEventListener('mousemove',e=>{mouseX=e.offsetX;});
+    function startGame(){
+        px=W/2-paddleW/2;bx=W/2;by=H-30;bvx=3;bvy=-3;lives=3;score=0;
+        document.getElementById('score').textContent=0;document.getElementById('lives').textContent=3;
+        bricks=[];
+        for(let r=0;r<BRICK_ROWS;r++)for(let col=0;col<BRICK_COLS;col++){
+            bricks.push({x:col*(BW+BPAD)+BPAD,y:r*(BH+BPAD)+BTOP,w:BW,h:BH,c:COLORS[r],alive:true});
+        }
+        gameOn=true;document.getElementById('overlay').style.display='none';
+        requestAnimationFrame(loop);
+    }
+    function loop(){
+        if(!gameOn)return;
+        px=mouseX-paddleW/2;px=Math.max(0,Math.min(W-paddleW,px));
+        bx+=bvx;by+=bvy;
+        if(bx<=0||bx>=W){bvx=-bvx;bx=Math.max(0,Math.min(W,bx));}
+        if(by<=0){bvy=-bvy;by=0;}
+        // Paddle
+        if(by>=H-16&&bx>=px&&bx<=px+paddleW&&bvy>0){bvy=-Math.abs(bvy);bvx+=(bx-(px+paddleW/2))*0.15;}
+        // Bottom
+        if(by>H){lives--;document.getElementById('lives').textContent=lives;if(lives<=0){endGame(false);return;}bx=W/2;by=H-30;bvx=3;bvy=-3;}
+        // Bricks
+        for(const b of bricks){
+            if(!b.alive)continue;
+            if(bx>b.x&&bx<b.x+b.w&&by>b.y&&by<b.y+b.h){b.alive=false;bvy=-bvy;score+=10;document.getElementById('score').textContent=score;}
+        }
+        if(bricks.every(b=>!b.alive)){endGame(true);return;}
+        draw();requestAnimationFrame(loop);
+    }
+    function draw(){
+        ctx.clearRect(0,0,W,H);
+        // Bricks
+        for(const b of bricks){if(!b.alive)continue;ctx.fillStyle=b.c;ctx.beginPath();ctx.roundRect(b.x,b.y,b.w,b.h,4);ctx.fill();}
+        // Paddle
+        ctx.fillStyle='#fff';ctx.beginPath();ctx.roundRect(px,H-12,paddleW,8,4);ctx.fill();
+        // Ball
+        ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(bx,by,5,0,Math.PI*2);ctx.fill();
+    }
+    function endGame(won){
+        gameOn=false;
+        document.getElementById('ovTitle').textContent=won?'You Win! 🎉':'Game Over';
+        document.getElementById('overlay').style.display='flex';
+        document.getElementById('overlay').querySelector('button').textContent='Play Again';
+    }
+    </script>
+</body>
+</html>

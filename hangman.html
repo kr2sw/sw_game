@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hangman</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        .container{text-align:center}
+        h1{font-size:2rem;margin-bottom:1.5rem}
+        canvas{margin-bottom:1.5rem}
+        #word{font-size:2.5rem;letter-spacing:.5rem;margin-bottom:1.5rem;font-family:monospace}
+        #word span{margin:0 2px}
+        .keyboard{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;max-width:500px;margin-bottom:1.5rem}
+        .key{width:40px;height:40px;border:none;border-radius:8px;background:rgba(255,255,255,.1);color:#fff;font-size:1rem;cursor:pointer;transition:background .2s}
+        .key:hover{background:rgba(255,255,255,.2)}
+        .key.used{opacity:.3;cursor:default}
+        .key.correct{background:#4ade80}
+        .key.wrong{background:#f43f5e}
+        #hint{font-size:1rem;color:#aaa;margin-bottom:1rem}
+        #status{font-size:1.2rem;margin-bottom:1rem}
+        .btn{padding:.6rem 1.5rem;border:none;background:#6c63ff;color:#fff;border-radius:8px;cursor:pointer;font-size:1rem}
+        .btn:hover{background:#5a52d5}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <div class="container">
+        <h1>Hangman</h1>
+        <canvas id="canvas" width="200" height="200"></canvas>
+        <div id="word"></div>
+        <div id="hint"></div>
+        <div id="status"></div>
+        <div class="keyboard" id="kb"></div>
+        <button class="btn" onclick="newGame()">New Word</button>
+    </div>
+    <script>
+    const WORDS=[
+        {w:'javascript',h:'Programming language'},{w:'python',h:'Snake name & language'},{w:'elephant',h:'Large animal'},
+        {w:'guitar',h:'Musical instrument'},{w:'chocolate',h:'Sweet treat'},{w:'mountain',h:'Very tall landform'},
+        {w:'dinosaur',h:'Extinct reptile'},{w:'bicycle',h:'Two wheels'},{w:'rainbow',h:'Colorful sky arc'},
+        {w:'kitchen',h:'Where you cook'},{w:'library',h:'Books place'},{w:'volcano',h:'Erupts lava'},
+        {w:'penguin',h:'Bird that cant fly'},{w:'universe',h:'Everything in space'},{w:'treasure',h:'Hidden gold'}
+    ];
+    let word,hint,guessed,wrong,gameOver;
+    function newGame(){
+        const {w,h}=WORDS[Math.floor(Math.random()*WORDS.length)];
+        word=w;hint=h;guessed=new Set();wrong=0;gameOver=false;
+        document.getElementById('status').textContent='';
+        document.getElementById('hint').textContent='Hint: '+hint;
+        renderWord();renderKB();draw();
+    }
+    function renderWord(){
+        const el=document.getElementById('word');
+        el.innerHTML=word.split('').map(c=>`<span>${guessed.has(c)?c:'_'}</span>`).join('');
+    }
+    function renderKB(){
+        const kb=document.getElementById('kb');kb.innerHTML='';
+        for(let i=0;i<26;i++){
+            const ch=String.fromCharCode(97+i);
+            const b=document.createElement('button');b.className='key';b.textContent=ch;
+            if(guessed.has(ch)){b.classList.add('used');b.classList.add(word.includes(ch)?'correct':'wrong');}
+            b.onclick=()=>guess(ch);kb.appendChild(b);
+        }
+    }
+    function guess(ch){
+        if(guessed.has(ch)||gameOver)return;
+        guessed.add(ch);
+        if(!word.includes(ch)){wrong++;draw();}
+        renderWord();renderKB();checkEnd();
+    }
+    function checkEnd(){
+        if(word.split('').every(c=>guessed.has(c))){gameOver=true;document.getElementById('status').textContent='You Win! 🎉';}
+        if(wrong>=6){gameOver=true;document.getElementById('status').textContent='Game Over! Word: '+word;}
+    }
+    function draw(){
+        const ctx=document.getElementById('canvas').getContext('2d');
+        ctx.clearRect(0,0,200,200);ctx.strokeStyle='#fff';ctx.lineWidth=2;
+        // Gallows
+        ctx.beginPath();ctx.moveTo(10,190);ctx.lineTo(100,190);ctx.moveTo(55,190);ctx.lineTo(55,20);ctx.lineTo(140,20);ctx.lineTo(140,40);ctx.stroke();
+        // Body
+        if(wrong>=1){ctx.beginPath();ctx.arc(140,55,15,0,Math.PI*2);ctx.stroke();} // Head
+        if(wrong>=2){ctx.beginPath();ctx.moveTo(140,70);ctx.lineTo(140,120);ctx.stroke();} // Body
+        if(wrong>=3){ctx.beginPath();ctx.moveTo(140,85);ctx.lineTo(115,105);ctx.stroke();} // Left arm
+        if(wrong>=4){ctx.beginPath();ctx.moveTo(140,85);ctx.lineTo(165,105);ctx.stroke();} // Right arm
+        if(wrong>=5){ctx.beginPath();ctx.moveTo(140,120);ctx.lineTo(115,160);ctx.stroke();} // Left leg
+        if(wrong>=6){ctx.beginPath();ctx.moveTo(140,120);ctx.lineTo(165,160);ctx.stroke();} // Right leg
+    }
+    newGame();
+    </script>
+</body>
+</html>

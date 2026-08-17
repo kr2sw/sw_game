@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sudoku</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        h1{font-size:2rem;margin-bottom:1rem}
+        .controls{display:flex;gap:.6rem;margin-bottom:1rem}
+        .controls button{padding:.4rem 1rem;border:none;background:rgba(255,255,255,.1);color:#fff;border-radius:6px;cursor:pointer;font-size:.85rem}
+        .controls button.active{background:#6c63ff}
+        .board{display:grid;grid-template-columns:repeat(9,42px);gap:1px;background:#555;padding:1px;border-radius:4px}
+        .cell{width:42px;height:42px;background:#1a1a2e;border:none;color:#fff;font-size:1.2rem;text-align:center;outline:none;font-family:monospace}
+        .cell:focus{background:#2a2a5a}
+        .cell.fixed{color:#6c63ff;font-weight:bold}
+        .cell.error{background:rgba(239,68,68,.2)}
+        .cell:nth-child(3n){border-right:2px solid #666}
+        .cell:nth-child(9n){border-right:none}
+        .board>div:nth-child(n+19):nth-child(-n+27),
+        .board>div:nth-child(n+46):nth-child(-n+54){border-bottom:2px solid #666}
+        .numpad{display:flex;gap:6px;margin-top:1rem}
+        .numpad button{width:42px;height:42px;border:none;background:rgba(255,255,255,.1);color:#fff;font-size:1.2rem;border-radius:6px;cursor:pointer}
+        .numpad button:hover{background:rgba(255,255,255,.2)}
+        .numpad button.active{background:#6c63ff}
+        #msg{margin-top:1rem;font-size:1.1rem;color:#4ade80}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <h1>Sudoku</h1>
+    <div class="controls">
+        <button class="active" onclick="setDiff('easy',this)">Easy</button>
+        <button onclick="setDiff('medium',this)">Medium</button>
+        <button onclick="setDiff('hard',this)">Hard</button>
+        <button onclick="generate()">New</button>
+    </div>
+    <div class="board" id="board"></div>
+    <div class="numpad" id="numpad"></div>
+    <div id="msg"></div>
+    <script>
+    let puzzle,board,fixed,diff='easy',selectedCell=null;
+    function generate(){
+        // Simple sudoku generator
+        const base=[[5,3,4,6,7,8,9,1,2],[6,7,2,1,9,5,3,4,8],[1,9,8,3,4,2,5,6,7],[8,5,9,7,6,1,4,2,3],[4,2,6,8,5,3,7,9,1],[7,1,3,9,2,4,8,5,6],[9,6,1,5,3,7,2,8,4],[2,8,7,4,1,9,6,3,5],[3,4,5,2,8,6,1,7,9]];
+        // Shuffle with transformations
+        for(let i=0;i<20;i++){
+            const t=Math.floor(Math.random()*4);
+            if(t===0)swapRows(base);else if(t===1)swapCols(base);else if(t===2)shuffleBand(base,'r');else shuffleBand(base,'c');
+        }
+        const remove=diff==='easy'?35:diff==='medium'?45:52;
+        puzzle=base.map(r=>[...r]);board=base.map(r=>[...r]);fixed=Array.from({length:9},()=>Array(9).fill(false));
+        let removed=0;
+        while(removed<remove){
+            const r=Math.floor(Math.random()*9),c=Math.floor(Math.random()*9);
+            if(board[r][c]===0)continue;
+            board[r][c]=0;puzzle[r][c]=0;fixed[r][c]=false;removed++;
+        }
+        for(let r=0;r<9;r++)for(let c=0;c<9;c++)if(puzzle[r][c])fixed[r][c]=true;
+        document.getElementById('msg').textContent='';
+        render();
+    }
+    function swapRows(g){const b=Math.floor(Math.random()*3)*3,r1=b+Math.floor(Math.random()*3),r2=b+Math.floor(Math.random()*3);[g[r1],g[r2]]=[g[r2],g[r1]];}
+    function swapCols(g){const b=Math.floor(Math.random()*3)*3,c1=b+Math.floor(Math.random()*3),c2=b+Math.floor(Math.random()*3);for(let r=0;r<9;r++)[g[r][c1],g[r][c2]]=[g[r][c2],g[r][c1]];}
+    function shuffleBand(g,dir){
+        const b=Math.floor(Math.random()*3);const a=[b*3,b*3+1,b*3+2].sort(()=>Math.random()-0.5);
+        if(dir==='r'){[g[a[0]],g[a[1]],g[a[2]]]=[g[b*3],g[b*3+1],g[b*3+2]];}
+        else{for(let r=0;r<9;r++){[g[r][a[0]],g[r][a[1]],g[r][a[2]]]=[g[r][b*3],g[r][b*3+1],g[r][b*3+2]];}}
+    }
+    function setDiff(d,btn){diff=d;document.querySelectorAll('.controls button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');generate();}
+    function render(){
+        const el=document.getElementById('board');el.innerHTML='';
+        for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+            const inp=document.createElement('input');inp.className='cell';
+            if(fixed[r][c]){inp.value=board[r][c];inp.classList.add('fixed');inp.readOnly=true;}
+            else{inp.value=board[r][c]||'';}
+            inp.dataset.r=r;inp.dataset.c=c;
+            inp.addEventListener('click',()=>{selectedCell={r,c};renderNumpad();});
+            inp.addEventListener('input',e=>{
+                const v=parseInt(e.target.value);
+                if(v>=1&&v<=9){board[r][c]=v;checkErr(r,c);}
+                else{board[r][c]=0;inp.value='';}
+                checkWin();
+            });
+            inp.addEventListener('focus',()=>{selectedCell={r,c};});
+            checkErr(r,c,inp);
+            el.appendChild(inp);
+        }
+        renderNumpad();
+    }
+    function checkErr(r,c,inp){
+        if(!inp)inp=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+        if(!inp)return;
+        inp.classList.remove('error');
+        if(!board[r][c])return;
+        // Check row/col/box
+        for(let i=0;i<9;i++){
+            if(i!==c&&board[r][i]===board[r][c]){inp.classList.add('error');return;}
+            if(i!==r&&board[i][c]===board[r][c]){inp.classList.add('error');return;}
+        }
+        const br=Math.floor(r/3)*3,bc=Math.floor(c/3)*3;
+        for(let dr=0;dr<3;dr++)for(let dc=0;dc<3;dc++){
+            const nr=br+dr,nc=bc+dc;
+            if((nr!==r||nc!==c)&&board[nr][nc]===board[r][c]){inp.classList.add('error');return;}
+        }
+    }
+    function renderNumpad(){
+        const el=document.getElementById('numpad');el.innerHTML='';
+        for(let i=1;i<=9;i++){
+            const b=document.createElement('button');b.textContent=i;b.onclick=()=>{
+                if(selectedCell&&!fixed[selectedCell.r][selectedCell.c]){
+                    board[selectedCell.r][selectedCell.c]=i;
+                    const inp=document.querySelector(`[data-r="${selectedCell.r}"][data-c="${selectedCell.c}"]`);
+                    if(inp)inp.value=i;
+                    checkErr(selectedCell.r,selectedCell.c);checkWin();
+                }
+            };el.appendChild(b);
+        }
+        const clr=document.createElement('button');clr.textContent='✕';clr.style.color='#f43f5e';
+        clr.onclick=()=>{if(selectedCell&&!fixed[selectedCell.r][selectedCell.c]){board[selectedCell.r][selectedCell.c]=0;const inp=document.querySelector(`[data-r="${selectedCell.r}"][data-c="${selectedCell.c}"]`);if(inp)inp.value='';}};
+        el.appendChild(clr);
+    }
+    function checkWin(){
+        if(board.flat().includes(0))return;
+        for(let r=0;r<9;r++)for(let c=0;c<9;c++){
+            for(let i=0;i<9;i++){if(i!==c&&board[r][i]===board[r][c])return;if(i!==r&&board[i][c]===board[r][c])return;}
+            const br=Math.floor(r/3)*3,bc=Math.floor(c/3)*3;
+            for(let dr=0;dr<3;dr++)for(let dc=0;dc<3;dc++){const nr=br+dr,nc=bc+dc;if((nr!==r||nc!==c)&&board[nr][nc]===board[r][c])return;}
+        }
+        document.getElementById('msg').textContent='Congratulations! 🎉';
+    }
+    generate();
+    </script>
+</body>
+</html>

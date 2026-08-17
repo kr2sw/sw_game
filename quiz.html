@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        .container{max-width:550px;width:100%;padding:0 1rem;text-align:center}
+        h1{font-size:2rem;margin-bottom:1rem}
+        .progress{width:100%;height:8px;background:rgba(255,255,255,.1);border-radius:4px;margin-bottom:2rem}
+        .progress-fill{height:100%;background:#6c63ff;border-radius:4px;transition:width .3s}
+        .question{font-size:1.3rem;margin-bottom:1.5rem;line-height:1.6;min-height:60px}
+        .options{display:flex;flex-direction:column;gap:10px}
+        .option{padding:1rem;border:2px solid rgba(255,255,255,.15);border-radius:10px;cursor:pointer;text-align:left;font-size:1rem;transition:border-color .2s,background .2s}
+        .option:hover{border-color:#6c63ff;background:rgba(108,99,255,.1)}
+        .option.correct{border-color:#4ade80;background:rgba(74,222,128,.15)}
+        .option.wrong{border-color:#f43f5e;background:rgba(244,63,94,.15)}
+        .option.disabled{pointer-events:none}
+        #result{margin-top:2rem;font-size:1.2rem;min-height:40px}
+        .btn{margin-top:1rem;padding:.6rem 2rem;border:none;background:#6c63ff;color:#fff;border-radius:8px;cursor:pointer;font-size:1rem}
+        .btn:hover{background:#5a52d5}
+        .score-display{font-size:3rem;font-weight:bold;margin:1rem 0}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <div class="container">
+        <h1>Knowledge Quiz</h1>
+        <div class="progress"><div class="progress-fill" id="pf" style="width:0"></div></div>
+        <div class="question" id="q"></div>
+        <div class="options" id="opts"></div>
+        <div id="result"></div>
+    </div>
+    <script>
+    const QS=[
+        {q:'What is the capital of France?',a:['Paris','London','Berlin','Madrid'],c:0},
+        {q:'Which planet is known as the Red Planet?',a:['Mars','Venus','Jupiter','Saturn'],c:0},
+        {q:'What is the largest ocean?',a:['Atlantic','Indian','Arctic','Pacific'],c:3},
+        {q:'Who painted the Mona Lisa?',a:['Da Vinci','Picasso','Van Gogh','Monet'],c:0},
+        {q:'What is the chemical symbol for gold?',a:['Go','Gd','Au','Ag'],c:2},
+        {q:'How many continents are there?',a:['5','6','7','8'],c:2},
+        {q:'What year did WWII end?',a:['1943','1944','1945','1946'],c:2},
+        {q:'What is the speed of light (approx)?',a:['300,000 km/s','150,000 km/s','500,000 km/s','1,000,000 km/s'],c:0},
+        {q:'Which element has atomic number 1?',a:['Helium','Oxygen','Carbon','Hydrogen'],c:3},
+        {q:'What is the largest mammal?',a:['Elephant','Blue Whale','Giraffe','Hippo'],c:1},
+        {q:'How many bones are in the human body?',a:['186','206','226','246'],c:1},
+        {q:'What is the currency of Japan?',a:['Yuan','Won','Yen','Ringgit'],c:2},
+        {q:'Which planet has the most moons?',a:['Jupiter','Saturn','Neptune','Uranus'],c:1},
+        {q:'What is the hardest natural substance?',a:['Gold','Iron','Diamond','Platinum'],c:2},
+        {q:'Who wrote Romeo and Juliet?',a:['Dickens','Shakespeare','Austen','Twain'],c:1},
+        {q:'What is the smallest prime number?',a:['0','1','2','3'],c:2},
+        {q:'Which country has the most people?',a:['India','USA','China','Indonesia'],c:0},
+        {q:'What gas do plants absorb?',a:['Oxygen','Nitrogen','CO2','Hydrogen'],c:2},
+        {q:'How many sides does a hexagon have?',a:['5','6','7','8'],c:1},
+        {q:'What is the boiling point of water?',a:['90°C','100°C','110°C','120°C'],c:1}
+    ];
+    let qs,idx,score,answered;
+    function startGame(){
+        qs=[...QS].sort(()=>Math.random()-0.5).slice(0,10);
+        idx=0;score=0;answered=false;
+        showQ();
+    }
+    function showQ(){
+        if(idx>=qs.length){showResult();return;}
+        answered=false;
+        const q=qs[idx];
+        document.getElementById('pf').style.width=(idx/qs.length*100)+'%';
+        document.getElementById('q').textContent=`${idx+1}/${qs.length}: ${q.q}`;
+        document.getElementById('result').textContent='';
+        const opts=document.getElementById('opts');opts.innerHTML='';
+        q.a.forEach((a,i)=>{
+            const d=document.createElement('div');d.className='option';d.textContent=a;
+            d.onclick=()=>answer(i);opts.appendChild(d);
+        });
+    }
+    function answer(i){
+        if(answered)return;answered=true;
+        const q=qs[idx];
+        const opts=document.querySelectorAll('.option');
+        opts.forEach((o,j)=>{
+            o.classList.add('disabled');
+            if(j===q.c)o.classList.add('correct');
+            if(j===i&&j!==q.c)o.classList.add('wrong');
+        });
+        if(i===q.c){score++;document.getElementById('result').textContent='Correct!';}
+        else{document.getElementById('result').textContent='Wrong!';}
+        setTimeout(()=>{idx++;showQ();},1200);
+    }
+    function showResult(){
+        document.getElementById('pf').style.width='100%';
+        document.getElementById('q').textContent='';
+        document.getElementById('opts').innerHTML='';
+        document.getElementById('result').innerHTML=`
+            <div class="score-display">${score}/${qs.length}</div>
+            <p style="color:#aaa">${score>=8?'Excellent!':score>=6?'Good job!':'Keep practicing!'}</p>
+            <button class="btn" onclick="startGame()">Play Again</button>
+        `;
+    }
+    startGame();
+    </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Speed</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        .container{max-width:600px;width:100%;padding:0 1rem}
+        h1{font-size:2rem;margin-bottom:.5rem;text-align:center}
+        #text{font-size:1.3rem;line-height:2;background:rgba(255,255,255,.05);padding:1.5rem;border-radius:12px;margin:1rem 0;min-height:80px;font-family:monospace}
+        #text .correct{color:#4ade80}
+        #text .wrong{color:#f43f5e;text-decoration:underline}
+        #text .current{background:rgba(108,99,255,.4);border-radius:2px}
+        #input{width:100%;padding:.8rem 1rem;font-size:1.1rem;border:2px solid #444;border-radius:8px;background:rgba(255,255,255,.07);color:#fff;outline:none;font-family:monospace;margin-bottom:1rem}
+        #input:focus{border-color:#6c63ff}
+        .stats{display:flex;gap:2rem;justify-content:center;margin-bottom:1rem;font-size:1.1rem}
+        .stats span{font-weight:bold}
+        .btn-row{display:flex;gap:.8rem;justify-content:center}
+        .btn-row button{padding:.6rem 1.5rem;border:none;background:#6c63ff;color:#fff;border-radius:8px;cursor:pointer;font-size:1rem}
+        .btn-row button:hover{background:#5a52d5}
+        #result{display:none;text-align:center;margin:1rem 0;font-size:1.3rem;padding:1rem;background:rgba(255,255,255,.05);border-radius:12px}
+        #result.show{display:block}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <div class="container">
+        <h1>Typing Speed</h1>
+        <div class="stats">
+            <span>WPM: <span id="wpm">0</span></span>
+            <span>Accuracy: <span id="acc">100</span>%</span>
+            <span>Time: <span id="time">60</span>s</span>
+        </div>
+        <div id="text"></div>
+        <input id="input" placeholder="Start typing..." autocomplete="off" disabled>
+        <div id="result"></div>
+        <div class="btn-row"><button onclick="startGame()">Start</button></div>
+    </div>
+    <script>
+    const TEXTS=[
+        "the quick brown fox jumps over the lazy dog and runs through the forest",
+        "coding is fun and typing fast is a great skill to have in the modern world",
+        "practice makes perfect so keep typing every day to improve your speed",
+        "javascript is a popular programming language used for web development",
+        "artificial intelligence is changing the way we live and work in society",
+        "the best way to predict the future is to create it with your own hands",
+        "learning to type fast can help you be more productive at work and school"
+    ];
+    let text,typed,idx,timer,running,totalChars,correctChars;
+    function startGame(){
+        text=TEXTS[Math.floor(Math.random()*TEXTS.length)];
+        typed='';idx=0;timer=60;running=false;totalChars=0;correctChars=0;
+        document.getElementById('input').disabled=false;document.getElementById('input').value='';
+        document.getElementById('result').classList.remove('show');
+        document.getElementById('wpm').textContent='0';document.getElementById('acc').textContent='100';document.getElementById('time').textContent='60';
+        render();document.getElementById('input').focus();
+    }
+    function render(){
+        const el=document.getElementById('text');el.innerHTML='';
+        for(let i=0;i<text.length;i++){
+            const s=document.createElement('span');
+            if(i<typed.length){s.className=typed[i]===text[i]?'correct':'wrong';s.textContent=text[i];}
+            else if(i===typed.length){s.className='current';s.textContent=text[i];}
+            else{s.textContent=text[i];}
+            el.appendChild(s);
+        }
+    }
+    document.getElementById('input').addEventListener('input',e=>{
+        if(!running){running=true;startTimer();}
+        typed=e.target.value;
+        // Calculate stats
+        let correct=0;
+        for(let i=0;i<typed.length;i++){if(typed[i]===text[i])correct++;}
+        const acc=typed.length?Math.round(correct/typed.length*100):100;
+        const wpm=Math.round((correct/5)/((60-timer)/60))||0;
+        document.getElementById('wpm').textContent=wpm;
+        document.getElementById('acc').textContent=acc;
+        render();
+        if(typed.length>=text.length)endGame();
+    });
+    function startTimer(){
+        const iv=setInterval(()=>{
+            timer--;document.getElementById('time').textContent=timer;
+            if(timer<=0){clearInterval(iv);endGame();}
+        },1000);
+    }
+    function endGame(){
+        running=false;document.getElementById('input').disabled=true;
+        const wpm=document.getElementById('wpm').textContent;
+        const acc=document.getElementById('acc').textContent;
+        const r=document.getElementById('result');
+        r.innerHTML=`<h2>Result</h2><p>WPM: ${wpm} | Accuracy: ${acc}%</p><p>Click Start to try again</p>`;
+        r.classList.add('show');
+    }
+    startGame();
+    </script>
+</body>
+</html>

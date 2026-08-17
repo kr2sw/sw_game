@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Othello</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        h1{font-size:2rem;margin-bottom:1rem}
+        #board{display:grid;grid-template-columns:repeat(8,52px);gap:2px;background:#065f46;padding:4px;border-radius:8px}
+        .cell{width:52px;height:52px;border-radius:6px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+        .cell .disc{width:42px;height:42px;border-radius:50%;transition:transform .3s}
+        .cell .disc.black{background:#111;border:2px solid #444}
+        .cell .disc.white{background:#f0f0f0;border:2px solid #ccc}
+        .cell.valid{background:rgba(74,222,128,.15);border:2px dashed #4ade80;border-radius:6px}
+        .cell.valid:hover{background:rgba(74,222,128,.3)}
+        .scores{display:flex;gap:2rem;font-size:1.1rem;margin-bottom:1rem}
+        .scores span{font-weight:bold}
+        .btn-row{margin-top:1rem}
+        .btn-row button{padding:.5rem 1.5rem;border:none;background:#6c63ff;color:#fff;border-radius:8px;cursor:pointer;font-size:.9rem}
+        #status{margin-top:.5rem;font-size:1rem;color:#aaa}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <h1>Othello</h1>
+    <div class="scores"><div>⚫: <span id="bc">2</span></div><div>⚪: <span id="wc">2</span></div></div>
+    <div id="board"></div>
+    <div id="status">Black's turn</div>
+    <div class="btn-row"><button onclick="newGame()">New Game</button></div>
+    <script>
+    const DIRS=[[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
+    let grid,turn,gameOver;
+    function newGame(){
+        grid=Array.from({length:8},()=>Array(8).fill(0));
+        grid[3][3]=2;grid[3][4]=1;grid[4][3]=1;grid[4][4]=2;
+        turn=1;gameOver=false;document.getElementById('status').textContent="Black's turn";render();
+    }
+    function getFlips(r,c,p){
+        if(grid[r][c])return[];
+        const all=[];
+        for(const[dr,dc]of DIRS){
+            let nr=r+dr,nc=c+dc,toFlip=[];
+            while(nr>=0&&nr<8&&nc>=0&&nc<8&&grid[nr][nc]&&grid[nr][nc]!==p){toFlip.push([nr,nc]);nr+=dr;nc+=dc;}
+            if(nr>=0&&nr<8&&nc>=0&&nc<8&&grid[nr][nc]===p&&toFlip.length)all.push(...toFlip);
+        }
+        return all;
+    }
+    function hasValid(p){for(let r=0;r<8;r++)for(let c=0;c<8;c++)if(getFlips(r,c,p).length)return true;return false;}
+    function play(r,c){
+        if(gameOver||grid[r][c])return;
+        const flips=getFlips(r,c,turn);
+        if(!flips.length)return;
+        grid[r][c]=turn;
+        flips.forEach(([fr,fc])=>grid[fr][fc]=turn);
+        turn=turn===1?2:1;
+        if(!hasValid(turn)){turn=turn===1?2:1;if(!hasValid(turn)){endGame();return;}}
+        document.getElementById('status').textContent=(turn===1?'Black':'White')+"'s turn";
+        render();
+    }
+    function endGame(){
+        gameOver=true;let b=0,w=0;
+        for(let r=0;r<8;r++)for(let c=0;c<8;c++){if(grid[r][c]===1)b++;if(grid[r][c]===2)w++;}
+        document.getElementById('status').textContent=b>w?'Black wins!':w>b?'White wins!':'Draw!';
+    }
+    function render(){
+        const el=document.getElementById('board');el.innerHTML='';let b=0,w=0;
+        for(let r=0;r<8;r++)for(let c=0;c<8;c++){
+            const d=document.createElement('div');d.className='cell';
+            if(grid[r][c]){const disc=document.createElement('div');disc.className='disc '+(grid[r][c]===1?'black':'white');d.appendChild(disc);if(grid[r][c]===1)b++;else w++;}
+            else if(getFlips(r,c,turn).length)d.classList.add('valid');
+            d.onclick=()=>play(r,c);el.appendChild(d);
+        }
+        document.getElementById('bc').textContent=b;document.getElementById('wc').textContent=w;
+    }
+    newGame();
+    </script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic Tac Toe</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem}
+        a.back:hover{color:#fff}
+        .header{margin-bottom:1.5rem;text-align:center}
+        .header h1{font-size:2rem;margin-bottom:.5rem}
+        #status{font-size:1.2rem;color:#aaa}
+        .board{display:grid;grid-template-columns:repeat(3,100px);grid-template-rows:repeat(3,100px);gap:8px}
+        .cell{width:100px;height:100px;background:rgba(255,255,255,.07);border:none;color:#fff;font-size:3rem;font-weight:bold;border-radius:12px;cursor:pointer;transition:background .2s}
+        .cell:hover{background:rgba(255,255,255,.12)}
+        .cell.x{color:#6c63ff}
+        .cell.o{color:#f43f5e}
+        .btn-row{margin-top:1.5rem;display:flex;gap:.8rem}
+        .btn-row button{padding:.5rem 1.5rem;border:none;background:rgba(255,255,255,.1);color:#fff;border-radius:8px;cursor:pointer;font-size:.9rem}
+        .btn-row button:hover{background:rgba(255,255,255,.2)}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <div class="header">
+        <h1>Tic Tac Toe</h1>
+        <div id="status">Your turn (X)</div>
+    </div>
+    <div class="board" id="board"></div>
+    <div class="btn-row">
+        <button onclick="newGame(true)">vs CPU</button>
+        <button onclick="newGame(false)">vs Player</button>
+    </div>
+    <script>
+    let cells,turn,gameOver,vsCPU;
+    const wins=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+    function newGame(cpu){vsCPU=cpu;cells=Array(9).fill('');turn='X';gameOver=false;render();}
+    function render(){
+        const b=document.getElementById('board');b.innerHTML='';
+        cells.forEach((v,i)=>{
+            const d=document.createElement('button');d.className='cell'+(v==='X'?' x':v==='O'?' o':'');
+            d.textContent=v;d.onclick=()=>play(i);b.appendChild(d);
+        });
+        document.getElementById('status').textContent=gameOver?document.getElementById('status').textContent:(vsCPU&&turn==='O'?'CPU thinking...':'Your turn ('+turn+')');
+    }
+    function play(i){
+        if(cells[i]||gameOver)return;
+        cells[i]=turn;
+        const w=checkWin();
+        if(w){end(w);return;}
+        if(cells.every(v=>v)){end('draw');return;}
+        turn=turn==='X'?'O':'X';
+        if(vsCPU&&turn==='O'&&!gameOver)setTimeout(cpuMove,300);
+        render();
+    }
+    function cpuMove(){
+        if(gameOver)return;
+        // Try to win
+        for(const w of wins){const m=w.find(i=>!cells[i]&&cells.filter((v,j)=>w.includes(j)&&v==='O').length===1);if(m!==undefined&&cells.filter((v,j)=>w.includes(j)&&v==='O').length===1&&cells.filter((v,j)=>w.includes(j)&&v==='').length===1){play(m);return;}}
+        // Block
+        for(const w of wins){const m=w.find(i=>!cells[i]&&cells.filter((v,j)=>w.includes(j)&&v==='X').length===1);if(m!==undefined&&cells.filter((v,j)=>w.includes(j)&&v==='X').length===1&&cells.filter((v,j)=>w.includes(j)&&v==='').length===1){play(m);return;}}
+        // Center
+        if(!cells[4]){play(4);return;}
+        // Random
+        const empty=cells.map((v,i)=>v?'':i).filter(v=>v!=='');
+        if(empty.length)play(empty[Math.floor(Math.random()*empty.length)]);
+    }
+    function checkWin(){for(const w of wins){if(w.every(i=>cells[i]===turn))return w;}return null;}
+    function end(result){
+        gameOver=true;
+        if(result==='draw')document.getElementById('status').textContent="It's a Draw!";
+        else{document.getElementById('status').textContent=(result[0]===0?'X':'O')+' Wins! 🎉';
+            result.forEach(i=>{document.querySelectorAll('.cell')[i].style.background='rgba(108,99,255,.3)';});
+        }
+    }
+    newGame(true);
+    </script>
+</body>
+</html>
