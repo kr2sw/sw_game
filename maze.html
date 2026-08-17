@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maze</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{min-height:100vh;background:#1a1a2e;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:'Segoe UI',sans-serif;color:#fff}
+        a.back{position:fixed;top:1rem;left:1rem;color:#888;text-decoration:none;font-size:.9rem;z-index:5}
+        a.back:hover{color:#fff}
+        h1{font-size:2rem;margin-bottom:.5rem}
+        .controls{display:flex;gap:.6rem;margin-bottom:1rem;flex-wrap:wrap;justify-content:center}
+        .controls button{padding:.4rem 1rem;border:none;background:rgba(255,255,255,.1);color:#fff;border-radius:6px;cursor:pointer;font-size:.85rem}
+        .controls button.active{background:#6c63ff}
+        .info{display:flex;gap:2rem;font-size:1rem;margin-bottom:1rem}
+        .info span{font-weight:bold}
+        canvas{border:2px solid #444;border-radius:4px;display:block}
+        .dpad{display:grid;grid-template-columns:repeat(3,56px);grid-template-rows:repeat(2,56px);gap:4px;margin-top:1rem}
+        .dpad button{width:56px;height:56px;border:none;background:rgba(255,255,255,.1);color:#fff;font-size:1.5rem;border-radius:8px;cursor:pointer}
+        .dpad button:active{background:rgba(255,255,255,.25)}
+        .dpad .empty{visibility:hidden}
+        #msg{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;flex-direction:column;align-items:center;justify-content:center;z-index:10}
+        #msg.show{display:flex}
+        #msg h2{font-size:2rem;margin-bottom:.5rem}
+        #msg p{color:#aaa;margin-bottom:1.5rem}
+        #msg button{padding:.7rem 2rem;border:none;background:#6c63ff;color:#fff;border-radius:8px;cursor:pointer;font-size:1rem}
+    </style>
+</head>
+<body>
+    <a class="back" href="index.html">&larr; Menu</a>
+    <h1>Maze</h1>
+    <div class="controls">
+        <button class="active" onclick="setSize(10,this)">10x10</button>
+        <button onclick="setSize(15,this)">15x15</button>
+        <button onclick="setSize(20,this)">20x20</button>
+    </div>
+    <div class="info">
+        <span>Steps: <span id="steps">0</span></span>
+        <span>Best: <span id="best">-</span></span>
+    </div>
+    <canvas id="c"></canvas>
+    <div class="dpad">
+        <div class="empty"></div>
+        <button onclick="move(0,-1)">&#9650;</button>
+        <div class="empty"></div>
+        <button onclick="move(-1,0)">&#9664;</button>
+        <button onclick="move(0,1)">&#9660;</button>
+        <button onclick="move(1,0)">&#9654;</button>
+    </div>
+    <div id="msg"><h2>Cleared!</h2><p id="msgText"></p><button onclick="newGame()">New Maze</button></div>
+    <script>
+    const c=document.getElementById('c'),ctx=c.getContext('2d');
+    let maze,size,px,py,ex,ey,steps,bestMap={};
+
+    function setSize(s,btn){
+        size=s;
+        document.querySelectorAll('.controls button').forEach(b=>b.classList.remove('active'));
+        if(btn)btn.classList.add('active');
+        newGame();
+    }
+
+    function newGame(){
+        // Generate maze using recursive backtracking
+        const w=size,h=size;
+        maze=Array.from({length:h},()=>Array.from({length:w},()=>({t:true,r:true,b:true,l:true,vis:false})));
+        const stack=[[0,0]];maze[0][0].vis=true;
+        const dirs=[{dx:0,dy:-1,wall:'t',opp:'b'},{dx:1,dy:0,wall:'r',opp:'l'},{dx:0,dy:1,wall:'b',opp:'t'},{dx:-1,dy:0,wall:'l',opp:'r'}];
+        while(stack.length){
+            const cur=stack[stack.length-1];
+            const nb=[];
+            for(const d of dirs){
+                const nx=cur[0]+d.dx,ny=cur[1]+d.dy;
+                if(nx>=0&&nx<w&&ny>=0&&ny<h&&!maze[ny][nx].vis)nb.push({nx,ny,d});
+            }
+            if(nb.length){
+                const{nx,ny,d}=nb[Math.floor(Math.random()*nb.length)];
+                maze[cur[1]][cur[0]][d.wall]=false;
+                maze[ny][nx][d.opp]=false;
+                maze[ny][nx].vis=true;
+                stack.push([nx,ny]);
+            }else{stack.pop();}
+        }
+
+        px=0;py=0;ex=w-1;ey=h-1;steps=0;
+        document.getElementById('steps').textContent=0;
+        document.getElementById('msg').classList.remove('show');
+
+        const cs=Math.min(Math.floor(500/size),40);
+        c.width=size*cs;c.height=size*cs;
+        c.dataset.cs=cs;
+        draw();
+    }
+
+    function draw(){
+        const cs=+c.dataset.cs;
+        ctx.clearRect(0,0,c.width,c.height);
+        ctx.fillStyle='#0a0a1a';ctx.fillRect(0,0,c.width,c.height);
+
+        // Cells
+        for(let r=0;r<size;r++)for(let col=0;col<size;col++){
+            const x=col*cs,y=r*cs;
+            // Goal cell
+            if(col===ex&&r===ey){
+                ctx.fillStyle='rgba(74,222,128,.15)';ctx.fillRect(x,y,cs,cs);
+                ctx.fillStyle='#4ade80';ctx.font=`${cs*.4}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+                ctx.fillText('🏁',x+cs/2,y+cs/2);
+            }
+            // Walls
+            ctx.strokeStyle='#555';ctx.lineWidth=2;
+            const cell=maze[r][col];
+            if(cell.t){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x+cs,y);ctx.stroke();}
+            if(cell.r){ctx.beginPath();ctx.moveTo(x+cs,y);ctx.lineTo(x+cs,y+cs);ctx.stroke();}
+            if(cell.b){ctx.beginPath();ctx.moveTo(x,y+cs);ctx.lineTo(x+cs,y+cs);ctx.stroke();}
+            if(cell.l){ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(x,y+cs);ctx.stroke();}
+        }
+
+        // Player
+        const cs2=+c.dataset.cs;
+        ctx.fillStyle='#6c63ff';
+        ctx.beginPath();
+        ctx.arc(px*cs2+cs2/2,py*cs2+cs2/2,cs2/3,0,Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle='rgba(255,255,255,.3)';
+        ctx.beginPath();
+        ctx.arc(px*cs2+cs2/2-3,py*cs2+cs2/2-3,cs2/8,0,Math.PI*2);
+        ctx.fill();
+
+        ctx.textAlign='start';ctx.textBaseline='alphabetic';
+    }
+
+    function move(dx,dy){
+        const cell=maze[py][px];
+        // Check wall
+        if(dx===1&&cell.r)return;
+        if(dx===-1&&cell.l)return;
+        if(dy===1&&cell.b)return;
+        if(dy===-1&&cell.t)return;
+        const nx=px+dx,ny=py+dy;
+        if(nx<0||nx>=size||ny<0||ny>=size)return;
+        px=nx;py=ny;steps++;
+        document.getElementById('steps').textContent=steps;
+        draw();
+        if(px===ex&&py===ey){
+            const key=size;
+            if(!bestMap[key]||steps<bestMap[key])bestMap[key]=steps;
+            document.getElementById('best').textContent=bestMap[key];
+            document.getElementById('msgText').textContent=`${size}x${size} in ${steps} steps`;
+            document.getElementById('msg').classList.add('show');
+        }
+    }
+
+    document.addEventListener('keydown',e=>{
+        const map={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]};
+        if(map[e.key]){e.preventDefault();move(...map[e.key]);}
+    });
+
+    // Touch swipe
+    let tx,ty;
+    c.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;});
+    c.addEventListener('touchend',e=>{
+        const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+        if(Math.abs(dx)<15&&Math.abs(dy)<15)return;
+        if(Math.abs(dx)>Math.abs(dy))move(dx>0?1:-1,0);
+        else move(0,dy>0?1:-1);
+    });
+
+    setSize(10,document.querySelector('.controls button'));
+    </script>
+</body>
+</html>

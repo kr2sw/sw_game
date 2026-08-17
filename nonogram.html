@@ -11,14 +11,18 @@
         a.back:hover{color:#fff}
         h1{font-size:2rem;margin-bottom:.5rem}
         #status{font-size:1rem;color:#aaa;margin-bottom:1rem}
-        #board{display:inline-grid;gap:0}
-        .col-hint{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:2px 4px;font-size:.75rem;color:#aaa;font-weight:bold;line-height:1.3}
-        .row-hint{display:flex;align-items:center;justify-content:flex-end;padding:2px 6px;font-size:.75rem;color:#aaa;font-weight:bold;gap:6px}
-        .cell{width:30px;height:30px;background:#2a2a4a;border:1px solid #333;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#666}
+        table{border-collapse:collapse}
+        .cw{width:28px;height:28px}
+        .ch{width:28px;padding:1px;text-align:center;vertical-align:bottom;color:#aaa;font-size:.72rem;font-weight:bold;border:none;background:none;line-height:1.4}
+        .rh{height:28px;padding:1px 5px;text-align:right;vertical-align:middle;color:#aaa;font-size:.72rem;font-weight:bold;border:none;background:none;white-space:nowrap}
+        .corner{background:none;border:none}
+        .cell{width:28px;height:28px;background:#2a2a4a;border:1px solid #3a3a5a;cursor:pointer;text-align:center;vertical-align:middle;font-size:.65rem;color:#666}
         .cell.filled{background:#6c63ff;border-color:#5a52d5}
-        .cell.x{color:#f43f5e}
+        .cell.x{color:#f43f5e;font-size:.8rem}
         .cell.correct{background:#4ade80}
         .cell.wrong{background:rgba(239,68,68,.3)}
+        .sep-top{border-bottom:2px solid #666}
+        .sep-left{border-right:2px solid #666}
         .btn-row{margin-top:1rem;display:flex;gap:.6rem}
         .btn-row button{padding:.4rem 1rem;border:none;background:rgba(255,255,255,.1);color:#fff;border-radius:6px;cursor:pointer;font-size:.85rem}
         .btn-row button.active{background:#6c63ff}
@@ -32,6 +36,7 @@
     <div class="btn-row">
         <button onclick="gen(5)">5x5</button>
         <button onclick="gen(10)" class="active">10x10</button>
+        <button onclick="gen(15)">15x15</button>
         <button onclick="check()">Check</button>
     </div>
     <script>
@@ -39,98 +44,83 @@
     function gen(s){
         size=s;
         document.querySelectorAll('.btn-row button').forEach(b=>b.classList.remove('active'));
-        document.querySelector(`.btn-row button[onclick="gen(${s})"]`).classList.add('active');
-        solution=Array.from({length:size},()=>Array.from({length:size},()=>Math.random()>.5?1:0));
+        const btn=document.querySelector(`.btn-row button[onclick="gen(${s})"]`);
+        if(btn)btn.classList.add('active');
+        solution=Array.from({length:size},()=>Array.from({length:size},()=>Math.random()>.4?1:0));
         board=Array.from({length:size},()=>Array(size).fill(0));
         render();
     }
     function getHints(arr){
-        const hints=[];let cnt=0;
-        for(let i=0;i<arr.length;i++){if(arr[i])cnt++;else if(cnt){hints.push(cnt);cnt=0;}}
-        if(cnt)hints.push(cnt);
-        return hints.length?hints:[0];
+        const h=[];let cnt=0;
+        for(let i=0;i<arr.length;i++){if(arr[i])cnt++;else if(cnt){h.push(cnt);cnt=0;}}
+        if(cnt)h.push(cnt);
+        return h.length?h:[0];
     }
     function render(){
         const el=document.getElementById('board');el.innerHTML='';
+        const rowH=[];let maxRH=0;
+        for(let r=0;r<size;r++){const h=getHints(solution[r]);rowH.push(h);if(h.length>maxRH)maxRH=h.length;}
+        const colH=[];let maxCH=0;
+        for(let c=0;c<size;c++){const h=getHints(solution.map(r=>r[c]));colH.push(h);if(h.length>maxCH)maxCH=h.length;}
 
-        // Collect all hints
-        const colHints=[];
-        let maxCH=0;
-        for(let c=0;c<size;c++){
-            const h=getHints(solution.map(r=>r[c]));
-            colHints.push(h);
-            if(h.length>maxCH)maxCH=h.length;
-        }
-        const rowHints=[];
-        let maxRH=0;
-        for(let r=0;r<size;r++){
-            const h=getHints(solution[r]);
-            rowHints.push(h);
-            if(h.length>maxRH)maxRH=h.length;
-        }
+        // Build table
+        const tbl=document.createElement('table');
+        const totalCols=maxRH+size;
 
-        // CSS grid: (maxRH cols for row-hint) + (size cols for cells)
-        //           (maxCH rows for col-hint) + (size rows for cells)
-        el.style.gridTemplateColumns=`repeat(${maxRH}, 28px) repeat(${size}, 30px)`;
-        el.style.gridTemplateRows=`repeat(${maxCH}, 28px) repeat(${size}, 30px)`;
-
-        // 1) Fill top-left corner area with empty divs
-        for(let r=0;r<maxCH;r++){
+        // --- Column hints rows ---
+        for(let hr=0;hr<maxCH;hr++){
+            const tr=document.createElement('tr');
+            // corner cells
             for(let c=0;c<maxRH;c++){
-                const d=document.createElement('div');
-                el.appendChild(d);
+                const td=document.createElement('td');td.className='corner cw';
+                if(hr===maxCH-1)td.classList.add('sep-top');
+                tr.appendChild(td);
             }
-        }
-
-        // 2) Column hints (top area, spanning maxRH..maxRH+size-1 columns)
-        // Place each col-hint in row r (top to bottom), col (maxRH+c)
-        for(let r=0;r<maxCH;r++){
+            // column hints
             for(let c=0;c<size;c++){
-                const d=document.createElement('div');
-                d.className='col-hint';
-                const h=colHints[c];
-                // We want to show hints bottom-aligned: the last hint goes in the bottom row
-                const hintIdx=h.length-1-(maxCH-1-r);
-                if(hintIdx>=0&&hintIdx<h.length){
-                    d.textContent=h[hintIdx];
-                }
-                el.appendChild(d);
+                const td=document.createElement('td');td.className='ch cw';
+                if(hr===maxCH-1)td.classList.add('sep-top');
+                const hints=colH[c];
+                // bottom-align: show hints from bottom row upward
+                const idx=hints.length-1-(maxCH-1-hr);
+                if(idx>=0&&idx<hints.length)td.textContent=hints[idx];
+                tr.appendChild(td);
             }
+            tbl.appendChild(tr);
         }
 
-        // 3) Row hints + puzzle cells (remaining maxRH+size rows)
+        // --- Puzzle rows ---
         for(let r=0;r<size;r++){
-            // Row hints
+            const tr=document.createElement('tr');
+            // row hints
             for(let c=0;c<maxRH;c++){
-                const d=document.createElement('div');
-                d.className='row-hint';
-                const h=rowHints[r];
-                // Left-align: first hint in leftmost column
-                if(c<h.length){
-                    d.textContent=h[c];
-                }
-                el.appendChild(d);
+                const td=document.createElement('td');td.className='rh';
+                if(c===maxRH-1)td.classList.add('sep-left');
+                if(c<rowH[r].length)td.textContent=rowH[r][c];
+                tr.appendChild(td);
             }
-            // Puzzle cells
+            // puzzle cells
             for(let c=0;c<size;c++){
-                const d=document.createElement('div');d.className='cell';
-                if(board[r][c]===1)d.classList.add('filled');
-                if(board[r][c]===-1){d.classList.add('x');d.textContent='✕';}
-                d.onclick=()=>{board[r][c]=board[r][c]===0?1:board[r][c]===1?-1:0;render();};
-                d.oncontextmenu=e=>{e.preventDefault();board[r][c]=board[r][c]===0?-1:board[r][c]===-1?0:board[r][c];render();};
-                el.appendChild(d);
+                const td=document.createElement('td');td.className='cell';
+                td.dataset.r=r;td.dataset.c=c;
+                if(board[r][c]===1)td.classList.add('filled');
+                if(board[r][c]===-1){td.classList.add('x');td.textContent='✕';}
+                td.onclick=()=>{board[r][c]=board[r][c]===0?1:board[r][c]===1?-1:0;render();};
+                td.oncontextmenu=e=>{e.preventDefault();board[r][c]=board[r][c]===0?-1:board[r][c]===-1?0:board[r][c];render();};
+                tr.appendChild(td);
             }
+            tbl.appendChild(tr);
         }
+        el.appendChild(tbl);
     }
     function check(){
-        const cells=document.querySelectorAll('#board .cell');
-        let idx=0;
-        for(let r=0;r<size;r++)for(let c=0;c<size;c++){
-            const cell=cells[idx++];
-            if(board[r][c]===1&&solution[r][c]===1)cell.classList.add('correct');
-            else if(board[r][c]===1&&solution[r][c]===0)cell.classList.add('wrong');
-            else if(board[r][c]===0&&solution[r][c]===1)cell.style.outline='1px solid #facc15';
-        }
+        const cells=document.querySelectorAll('#board td.cell');
+        cells.forEach(td=>{
+            const r=+td.dataset.r,c=+td.dataset.c;
+            if(board[r][c]===1&&solution[r][c]===1)td.classList.add('correct');
+            else if(board[r][c]===1&&solution[r][c]===0)td.classList.add('wrong');
+            else if(board[r][c]===0&&solution[r][c]===1)td.style.outline='2px solid #facc15';
+        });
     }
     gen(10);
     </script>
